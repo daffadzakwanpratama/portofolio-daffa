@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daffa | Junior Full Stack Developer Portfolio</title>
+  <meta name="description"
+    content="Portofolio profesional Daffa, Junior Full Stack Developer. Menampilkan keahlian frontend & backend, galeri proyek aplikasi web, pengalaman kerja, dan kontak.">
+  <meta name="author" content="Daffa">
+
+  <!-- Favicon placeholder (using SVG) -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="assets/css/styles.css">
+
+  <!-- Font Preconnect -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+
+<body>
+
+  <!-- --- HEADER & NAVIGATION --- -->
+  <header class="header" id="header">
+    <div class="container">
+      <a href="#hero" class="logo" id="nav-logo">
+        ⚡ Daffa<span>.</span>
+      </a>
+
+      <!-- Desktop Navigation Menu -->
+      <nav class="nav-menu" id="nav-menu">
+        <a href="#hero" class="nav-link active" id="link-hero">Beranda</a>
+        <a href="#about" class="nav-link" id="link-about">Tentang Saya</a>
+        <a href="#skills" class="nav-link" id="link-skills">Keahlian</a>
+        <a href="#projects" class="nav-link" id="link-projects">Proyek</a>
+        <a href="#timeline" class="nav-link" id="link-timeline">Riwayat</a>
+        <a href="#contact" class="nav-link" id="link-contact">Kontak</a>
+      </nav>
+
+      <!-- Mobile Nav Hamburger Button -->
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- --- HERO SECTION --- -->
+    <section class="hero" id="hero">
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-badge" id="hero-status-badge">Terbuka untuk Magang & Freelance</div>
+          <h1 class="hero-title" id="hero-title-container">
+            <span id="hero-name">Halo, Saya Daffa</span><br>
+            <span id="hero-title">Junior Full Stack Developer</span>
+          </h1>
+          <p class="hero-desc" id="hero-desc">
+            Saya membangun aplikasi web dinamis yang mengintegrasikan pengalaman antarmuka yang memukau dengan
+            arsitektur backend yang tangguh.
+          </p>
+          <div class="hero-btns">
+            <a href="#projects" class="btn btn-primary" id="hero-cta-primary">
+              Lihat Proyek Saya
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </a>
+            <a href="#contact" class="btn btn-secondary" id="hero-cta-secondary">Hubungi Saya</a>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-shape-bg"></div>
+          <div class="avatar-container" id="avatar-container">
+            <div id="avatar-visual" class="avatar-placeholder">DA</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --- ABOUT ME SECTION --- -->
+    <section class="section about" id="about">
+      <div class="container">
+        <div class="about-visual">
+          <div class="about-card" id="about-card-widget">
+            <h3 id="about-name">Daffa</h3>
+            <p id="about-title" style="color: var(--accent); font-weight:700; margin-bottom: 1rem;">Junior Full Stack
+              Developer</p>
+            <p style="font-size: 0.95rem;">Fokus pada pembuatan solusi teknologi yang bersih, efisien, dan berdampak
+              nyata bagi bisnis.</p>
+            <div class="about-card-stat">
+              <div class="stat-item">
+                <h4 id="stat-projects-count">8+</h4>
+                <p>Proyek Selesai</p>
+              </div>
+              <div class="stat-item">
+                <h4 id="stat-experience-years">1+</h4>
+                <p>Tahun Belajar</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-info">
+          <span class="section-tag">Tentang Saya</span>
+          <h2 class="about-title" id="about-heading-title">Membangun Jembatan antara Desain dan Kode</h2>
+          <p class="about-bio" id="about-bio">
+            Saya adalah seorang Junior Full Stack Developer yang berdedikasi tinggi untuk membangun aplikasi web yang
+            cepat, responsif, dan mudah digunakan. Menguasai ekosistem JavaScript modern baik di sisi frontend maupun
+            backend.
+          </p>
+          <div class="about-details">
+            <div class="detail-item">
+              <span class="detail-label">Lokasi</span>
+              <span class="detail-value" id="detail-location">Jakarta, Indonesia</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Email</span>
+              <span class="detail-value" id="detail-email">daffa@example.com</span>
+            </div>
+          </div>
+          <div class="hero-btns">
+            <a href="#" class="btn btn-primary download-cv-btn" id="btn-download-cv">
+              Unduh CV / Resume
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --- SKILLS SECTION --- -->
+    <section class="section" id="skills" style="background-color: var(--bg-secondary);">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Teknologi</span>
+          <h2 class="section-title">Keahlian & Tech Stack</h2>
+          <p class="section-desc">Berikut adalah daftar teknologi dan bahasa pemrograman yang aktif saya gunakan untuk
+            mendevelop aplikasi.</p>
+        </div>
+
+        <div class="skills-grid" id="skills-target">
+          <!-- Dynamically filled with JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --- PROJECTS SECTION --- -->
+    <section class="section" id="projects">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Portofolio</span>
+          <h2 class="section-title">Proyek Unggulan</h2>
+          <p class="section-desc">Kumpulan proyek aplikasi web yang telah selesai saya kerjakan dari awal maupun
+            kontribusi tim.</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="project-filters" id="project-filters-container">
+          <button class="filter-btn active" data-filter="All" id="filter-all">Semua</button>
+          <button class="filter-btn" data-filter="Frontend" id="filter-frontend">Frontend</button>
+          <button class="filter-btn" data-filter="Backend" id="filter-backend">Backend</button>
+          <button class="filter-btn" data-filter="Fullstack" id="filter-fullstack">Fullstack</button>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="projects-grid" id="projects-grid-target" style="transition: opacity 0.15s ease;">
+          <!-- Dynamically filled with JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- --- EXPERIENCE & EDUCATION --- -->
+    <section class="section" id="timeline" style="background-color: var(--bg-secondary);">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Perjalanan</span>
+          <h2 class="section-title">Riwayat & Pengalaman</h2>
+          <p class="section-desc">Perjalanan profesional, magang, pendidikan formal, serta sertifikasi IT yang telah
+            saya lalui.</p>
+        </div>
+
+        <div class="timeline-layout">
+          <!-- Experience Column -->
+          <div>
+            <h3 class="timeline-column-title">
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+              </span>
+              Pengalaman Kerja
+            </h3>
+            <div class="timeline-list" id="experience-target">
+              <!-- Dynamically filled with JS -->
+            </div>
+          </div>
+
+          <!-- Education Column -->
+          <div>
+            <h3 class="timeline-column-title">
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                  <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"></path>
+                </svg>
+              </span>
+              Pendidikan & Sertifikasi
+            </h3>
+            <div class="timeline-list" id="education-target">
+              <!-- Dynamically filled with JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- --- CONTACT SECTION --- -->
+    <section class="section contact" id="contact">
+      <div class="container">
+        <div class="contact-info">
+          <span class="section-tag">Hubungi</span>
+          <h2 class="section-title" style="text-align: left; margin-bottom: 2rem;">Mari Kolaborasi Membangun Sesuatu
+            yang Hebat</h2>
+
+          <div class="contact-card">
+            <!-- Email -->
+            <div class="contact-method">
+              <div class="contact-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+              </div>
+              <div class="contact-text">
+                <h4>Kirim Email</h4>
+                <a href="mailto:daffa@example.com" id="contact-link-email">daffa@example.com</a>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <div class="contact-method">
+              <div class="contact-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+              <div class="contact-text">
+                <h4>Lokasi Saat Ini</h4>
+                <p id="contact-text-location">Jakarta, Indonesia</p>
+              </div>
+            </div>
+
+            <!-- Social Networks -->
+            <div style="margin-top: 1rem; border-top: 1px solid var(--border-light); padding-top: 1.5rem;">
+              <h4
+                style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                Jejaring Sosial</h4>
+              <div class="contact-socials social-links-target" id="contact-socials-list">
+                <!-- Dynamically filled with JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Form Card -->
+        <div class="contact-form-container">
+          <form id="contact-form">
+            <div class="form-group-row">
+              <div class="form-group">
+                <label for="form-name" class="form-label">Nama Lengkap</label>
+                <input type="text" id="form-name" class="form-input" placeholder="Masukkan nama Anda" required>
+              </div>
+              <div class="form-group">
+                <label for="form-email" class="form-label">Alamat Email</label>
+                <input type="email" id="form-email" class="form-input" placeholder="Masukkan email Anda" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="form-subject" class="form-label">Subjek Pesan</label>
+              <input type="text" id="form-subject" class="form-input" placeholder="Apa subjek pesan Anda?" required>
+            </div>
+
+            <div class="form-group">
+              <label for="form-message" class="form-label">Pesan Anda</label>
+              <textarea id="form-message" class="form-input" placeholder="Tuliskan detail pesan Anda di sini..."
+                required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1rem;" id="btn-submit-message">
+              Kirim Pesan Sekarang
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+
+            <div class="form-alert" id="form-alert"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- --- FOOTER --- -->
+  <footer class="footer">
+    <div class="container">
+      <p class="footer-text" id="footer-text">&copy; 2026 Daffa. Dibuat dengan &hearts; menggunakan HTML,
+        CSS, dan JavaScript Murni.</p>
+    </div>
+  </footer>
+
+  <!-- --- DETAIL MODAL POPUP --- -->
+  <aside class="modal" id="project-modal" aria-hidden="true" role="dialog">
+    <div class="modal-content">
+      <button class="modal-close" id="modal-close" aria-label="Tutup Detail">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <div class="modal-body" id="modal-body-target">
+        <!-- Dynamically rendered project details -->
+      </div>
+    </div>
+  </aside>
+
+  <!-- JS Code Files -->
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+
+</html>

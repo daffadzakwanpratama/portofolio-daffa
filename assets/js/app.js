@@ -1,0 +1,641 @@
+// --- SAFE LOCALSTORAGE WRAPPER ---
+const SafeStorage = {
+  getItem(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn("localStorage.getItem blocked or inaccessible. Using memory fallback.", e);
+      return this._memoryStore[key] || null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("localStorage.setItem blocked or inaccessible. Using memory fallback.", e);
+      this._memoryStore[key] = String(value);
+    }
+  },
+  _memoryStore: {}
+};
+
+// APP STATE MANAGER
+const AppState = {
+  data: null,
+
+  init() {
+    // 1. Check if data exists in SafeStorage, otherwise clone from default data
+    const localData = SafeStorage.getItem("daffa_portfolio_data");
+    if (localData) {
+      try {
+        this.data = JSON.parse(localData);
+        // Otomatis reset ke data default baru jika masih tersimpan nama lama
+        if (this.data && this.data.profile && this.data.profile.name === "Daffa Ardiansyah") {
+          this.resetToDefault();
+        }
+      } catch (e) {
+        console.error("Error parsing portfolio data, resetting to default:", e);
+        this.resetToDefault();
+      }
+    } else {
+      this.resetToDefault();
+    }
+
+    // Ensure contact messages array exists in SafeStorage
+    if (!SafeStorage.getItem("daffa_portfolio_messages")) {
+      SafeStorage.setItem("daffa_portfolio_messages", JSON.stringify([]));
+    }
+  },
+
+  resetToDefault() {
+    if (window.defaultPortfolioData) {
+      this.data = JSON.parse(JSON.stringify(window.defaultPortfolioData)); // deep clone
+      this.save();
+    } else {
+      console.error("Default portfolio data not found!");
+    }
+  },
+
+  save() {
+    SafeStorage.setItem("daffa_portfolio_data", JSON.stringify(this.data));
+  },
+
+  getData() {
+    return this.data;
+  }
+};
+
+// --- CORE FRONTEND CONTROLLER ---
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize App State
+  AppState.init();
+
+  // Render Sections
+  renderProfile();
+  renderSkills();
+  renderProjects("All");
+  renderTimeline();
+
+  // Setup Interactions
+  setupHeaderScroll();
+  setupMobileNav();
+  setupScrollSpy();
+  setupProjectFilters();
+  setupContactForm();
+  setupModalClose();
+  setupSkillsAnimation();
+});
+
+// 1. RENDER PROFILE (Hero & About Me)
+function renderProfile() {
+  const data = AppState.getData();
+  const profile = data.profile;
+
+  // Set title & name in Hero safely
+  const heroNameEl = document.getElementById("hero-name");
+  if (heroNameEl) heroNameEl.innerHTML = `Halo, Saya <span>${profile.name}</span>`;
+
+  const heroTitleEl = document.getElementById("hero-title");
+  if (heroTitleEl) heroTitleEl.innerText = profile.title;
+
+  const heroDescEl = document.getElementById("hero-desc") || document.getElementById("hero-bio");
+  if (heroDescEl) heroDescEl.innerText = profile.bio;
+
+  // Set About Me details safely
+  const aboutNameEl = document.getElementById("about-name");
+  if (aboutNameEl) aboutNameEl.innerText = profile.name;
+
+  const aboutTitleEl = document.getElementById("about-title");
+  if (aboutTitleEl) aboutTitleEl.innerText = profile.title;
+
+  const aboutBioEl = document.getElementById("about-bio");
+  if (aboutBioEl) aboutBioEl.innerText = profile.bio;
+
+  const emailEl = document.getElementById("detail-email");
+  if (emailEl) emailEl.innerText = profile.email;
+
+  const locationEl = document.getElementById("detail-location");
+  if (locationEl) locationEl.innerText = profile.location;
+
+  // Set Social Links
+  const socialContainers = document.querySelectorAll(".social-links-target");
+  socialContainers.forEach(container => {
+    container.innerHTML = `
+      <a href="${profile.github}" target="_blank" class="social-link" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+      </a>
+      <a href="${profile.linkedin}" target="_blank" class="social-link" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+      </a>
+      <a href="${profile.instagram}" target="_blank" class="social-link" aria-label="Instagram">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+      </a>
+      <a href="${profile.twitter}" target="_blank" class="social-link" aria-label="Twitter">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
+      </a>
+    `;
+  });
+
+  // Set CV download button
+  const downloadBtns = document.querySelectorAll(".download-cv-btn");
+  downloadBtns.forEach(btn => {
+    btn.href = profile.resumeUrl;
+    if (profile.resumeUrl === "#") {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        alert("CV belum diunggah oleh pemilik. Anda dapat mengunggahnya nanti melalui dashboard admin!");
+      });
+    }
+  });
+
+  // Render Avatar Visual
+  const avatarVisual = document.getElementById("avatar-visual");
+  if (profile.avatar) {
+    avatarVisual.innerHTML = `<img src="${profile.avatar}" alt="${profile.name}" class="avatar-image">`;
+  } else {
+    // Generate Initial Avatar
+    const initials = profile.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+    avatarVisual.innerHTML = `<div class="avatar-placeholder">${initials}</div>`;
+  }
+}
+
+// 2. RENDER SKILLS GROUPED BY CATEGORY
+function renderSkills() {
+  const data = AppState.getData();
+  const skills = data.skills;
+  const container = document.getElementById("skills-target");
+  container.innerHTML = "";
+
+  if (!skills || skills.length === 0) {
+    container.innerHTML = "<p style='grid-column: 1/-1; text-align: center;'>Belum ada keahlian ditambahkan.</p>";
+    return;
+  }
+
+  // Group skills by category
+  const categories = {};
+  skills.forEach(skill => {
+    if (!categories[skill.category]) {
+      categories[skill.category] = [];
+    }
+    categories[skill.category].push(skill);
+  });
+
+  // Icon mapping helper for categories
+  const categoryIcons = {
+    Frontend: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`,
+    Backend: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6"></path></svg>`,
+    Database: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>`,
+    DevOps: `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M2 12h20"></path></svg>`,
+  };
+
+  // Render each category block
+  Object.keys(categories).forEach(cat => {
+    const catSkills = categories[cat];
+    const icon = categoryIcons[cat] || `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+
+    const card = document.createElement("div");
+    card.className = "skills-card";
+
+    let skillsHTML = "";
+    catSkills.forEach(skill => {
+      skillsHTML += `
+        <div class="skill-item">
+          <div class="skill-info">
+            <span class="skill-name">${skill.name}</span>
+            <span class="skill-percentage">${skill.level}%</span>
+          </div>
+          <div class="skill-bar-bg">
+            <div class="skill-bar-fill" data-level="${skill.level}"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    card.innerHTML = `
+      <h3 class="skills-category-title">
+        <span>${icon}</span>
+        ${cat}
+      </h3>
+      <div class="skill-list">
+        ${skillsHTML}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// 3. RENDER PROJECTS WITH DYNAMIC FILTERS
+function renderProjects(filterCategory = "All") {
+  const data = AppState.getData();
+  const projects = data.projects;
+  const grid = document.getElementById("projects-grid-target");
+  grid.innerHTML = "";
+
+  if (!projects || projects.length === 0) {
+    grid.innerHTML = "<p style='grid-column: 1/-1; text-align: center; padding: 3rem;'>Belum ada proyek.</p>";
+    return;
+  }
+
+  // Filter projects by category
+  const filteredProjects = filterCategory === "All"
+    ? projects
+    : projects.filter(p => p.category.toLowerCase() === filterCategory.toLowerCase());
+
+  if (filteredProjects.length === 0) {
+    grid.innerHTML = "<p style='grid-column: 1/-1; text-align: center; padding: 3rem;'>Tidak ada proyek dalam kategori ini.</p>";
+    return;
+  }
+
+  filteredProjects.forEach(proj => {
+    const card = document.createElement("div");
+    card.className = "project-card";
+    card.dataset.id = proj.id;
+    card.style.animation = "fadeIn 0.4s ease forwards";
+
+    // Thumbnail display
+    let thumbnailHTML = "";
+    if (proj.thumbnail) {
+      thumbnailHTML = `<img src="${proj.thumbnail}" alt="${proj.title}" style="width: 100%; height: 100%; object-fit: cover;">`;
+    } else {
+      // Premium placeholder gradient using HSL based on project title
+      const hue = proj.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+      thumbnailHTML = `
+        <div class="project-thumb-placeholder" style="background: linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(${hue}, 60%, 45%)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span style="font-size: 0.8rem; font-weight: 700; color: hsl(${hue}, 60%, 40%); text-transform: uppercase; letter-spacing: 0.05em;">${proj.category}</span>
+        </div>
+      `;
+    }
+
+    // Technology Tags
+    const tagsHTML = proj.technologies.slice(0, 3).map(tech => `<span class="tech-tag">${tech}</span>`).join("");
+    const remainingCount = proj.technologies.length - 3;
+    const remainingHTML = remainingCount > 0 ? `<span class="tech-tag">+${remainingCount}</span>` : "";
+
+    // Featured badge
+    const featuredHTML = proj.featured
+      ? `<div class="project-featured-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          Unggulan
+         </div>`
+      : "";
+
+    card.innerHTML = `
+      <div class="project-thumb">
+        ${thumbnailHTML}
+        ${featuredHTML}
+      </div>
+      <div class="project-body">
+        <span class="project-category">${proj.category}</span>
+        <h3 class="project-card-title">${proj.title}</h3>
+        <p class="project-excerpt">${proj.description}</p>
+        <div class="project-tech">
+          ${tagsHTML}
+          ${remainingHTML}
+        </div>
+      </div>
+    `;
+
+    // Click handler to open details modal
+    card.addEventListener("click", () => {
+      openProjectModal(proj.id);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// 4. RENDER EXPERIENCES & EDUCATION TIMELINES
+function renderTimeline() {
+  const data = AppState.getData();
+
+  // Render Experience
+  const expTarget = document.getElementById("experience-target");
+  if (expTarget) {
+    expTarget.innerHTML = "";
+    const experiences = data.experiences;
+
+    if (!experiences || experiences.length === 0) {
+      expTarget.innerHTML = "<p>Belum ada riwayat pengalaman.</p>";
+    } else {
+      experiences.forEach(exp => {
+        const item = document.createElement("div");
+        item.className = "timeline-item";
+
+        const descList = exp.description.map(desc => `<li>${desc}</li>`).join("");
+
+        item.innerHTML = `
+          <div class="timeline-period">${exp.period}</div>
+          <h3 class="timeline-title">${exp.role}</h3>
+          <div class="timeline-subtitle">${exp.company} &bull; ${exp.type}</div>
+          <div class="timeline-desc">
+            <ul>${descList}</ul>
+          </div>
+        `;
+        expTarget.appendChild(item);
+      });
+    }
+  }
+
+  // Render Education
+  const eduTarget = document.getElementById("education-target");
+  if (eduTarget) {
+    eduTarget.innerHTML = "";
+    const educations = data.educations;
+
+    if (!educations || educations.length === 0) {
+      eduTarget.innerHTML = "<p>Belum ada riwayat pendidikan.</p>";
+    } else {
+      educations.forEach(edu => {
+        const item = document.createElement("div");
+        item.className = "timeline-item";
+
+        item.innerHTML = `
+          <div class="timeline-period">${edu.period}</div>
+          <h3 class="timeline-title">${edu.degree}</h3>
+          <div class="timeline-subtitle">${edu.institution}</div>
+          <div class="timeline-desc">
+            <p>${edu.description}</p>
+          </div>
+        `;
+        eduTarget.appendChild(item);
+      });
+    }
+  }
+}
+
+// --- SETUP UTILITY INTERACTIONS ---
+
+// 1. Header background scroll color & shadow transition
+function setupHeaderScroll() {
+  const header = document.getElementById("header");
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 50) {
+      header.classList.add("scrolled");
+    } else {
+      header.classList.remove("scrolled");
+    }
+  });
+}
+
+// 2. Mobile navbar toggle drawer open/close
+function setupMobileNav() {
+  const navToggle = document.getElementById("nav-toggle");
+  const navMenu = document.getElementById("nav-menu");
+  const navLinks = document.querySelectorAll(".nav-link");
+
+  navToggle.addEventListener("click", () => {
+    navToggle.classList.toggle("active");
+    navMenu.classList.toggle("active");
+  });
+
+  navLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      navToggle.classList.remove("active");
+      navMenu.classList.remove("active");
+    });
+  });
+}
+
+// 3. ScrollSpy: Highlight active navigation link based on scrolled section view
+function setupScrollSpy() {
+  const sections = document.querySelectorAll("section");
+  const navLinks = document.querySelectorAll(".nav-link");
+  const headerHeight = varToNum("--header-height") || 80;
+  let lastClickTime = 0;
+  let currentActiveId = "hero";
+
+  console.log("ScrollSpy initialized with", sections.length, "sections.");
+
+  // Add click listener to instantly highlight clicked link
+  navLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      const targetId = link.getAttribute("href").substring(1);
+      console.log("Nav link clicked:", targetId);
+      
+      lastClickTime = Date.now();
+      currentActiveId = targetId;
+      
+      navLinks.forEach(l => l.classList.remove("active"));
+      link.classList.add("active");
+    });
+  });
+
+  window.addEventListener("scroll", () => {
+    // If recently clicked, do not let scroll listener override immediate highlight
+    if (Date.now() - lastClickTime < 800) {
+      return;
+    }
+
+    const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+    let current = "";
+
+    sections.forEach(section => {
+      const sectionTop = section.getBoundingClientRect().top + scrollPosition;
+      // Highlight the section when its top edge is scrolled past the header (with a 120px threshold for better UX)
+      if (scrollPosition >= sectionTop - headerHeight - 120) {
+        current = section.getAttribute("id");
+      }
+    });
+
+    // Check if scrolled to the absolute bottom of the page
+    const isAtBottom = (window.innerHeight + scrollPosition) >= document.documentElement.scrollHeight - 15;
+    if (isAtBottom && sections.length > 0) {
+      current = sections[sections.length - 1].getAttribute("id");
+    }
+
+    if (current && current !== currentActiveId) {
+      console.log("ScrollSpy changed section to:", current);
+      currentActiveId = current;
+      
+      navLinks.forEach(link => {
+        link.classList.remove("active");
+        if (link.getAttribute("href").substring(1) === current) {
+          link.classList.add("active");
+        }
+      });
+    }
+  });
+
+  function varToNum(cssVar) {
+    const val = getComputedStyle(document.documentElement).getPropertyValue(cssVar);
+    const parsed = parseInt(val);
+    return isNaN(parsed) ? 80 : parsed;
+  }
+}
+
+// 4. Projects Category Filter click logic
+function setupProjectFilters() {
+  const filterButtons = document.querySelectorAll(".filter-btn");
+  filterButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // Remove active from all and set on clicked
+      filterButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const filter = btn.dataset.filter;
+
+      // Animate grid change
+      const grid = document.getElementById("projects-grid-target");
+      grid.style.opacity = 0;
+      setTimeout(() => {
+        renderProjects(filter);
+        grid.style.opacity = 1;
+      }, 150);
+    });
+  });
+}
+
+// 5. Skills dynamic level progress bar animation trigger on IntersectionObserver
+function setupSkillsAnimation() {
+  const skillsSection = document.getElementById("skills");
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Find all skill bars inside the section and fill them
+        const fillBars = document.querySelectorAll(".skill-bar-fill");
+        fillBars.forEach(bar => {
+          const level = bar.dataset.level;
+          bar.style.width = `${level}%`;
+        });
+        // Once animated, unobserve the section
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  if (skillsSection) {
+    observer.observe(skillsSection);
+  }
+}
+
+// 6. Project detail modal popup render & visibility
+function openProjectModal(projectId) {
+  const data = AppState.getData();
+  const project = data.projects.find(p => p.id === projectId);
+
+  if (!project) return;
+
+  const modal = document.getElementById("project-modal");
+  const modalBody = document.getElementById("modal-body-target");
+
+  // Custom thumbnail placeholder
+  let thumbnailHTML = "";
+  if (project.thumbnail) {
+    thumbnailHTML = `<img src="${project.thumbnail}" alt="${project.title}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius-sm)">`;
+  } else {
+    const hue = project.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+    thumbnailHTML = `
+      <div class="project-thumb-placeholder" style="background: linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%); width:100%; height:100%; border-radius: var(--radius-sm)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(${hue}, 60%, 45%)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+      </div>
+    `;
+  }
+
+  // Tech list
+  const techHTML = project.technologies.map(tech => `<span class="tech-tag" style="background-color: var(--accent-light); color: var(--accent); font-weight: 700;">${tech}</span>`).join("");
+
+  modalBody.innerHTML = `
+    <div class="modal-thumb">
+      ${thumbnailHTML}
+    </div>
+    <span class="project-category" style="font-size: 0.85rem">${project.category}</span>
+    <h2 style="font-size: 2rem; margin-top: 0.5rem; letter-spacing: -0.02em;">${project.title}</h2>
+    <div class="modal-tech">
+      ${techHTML}
+    </div>
+    <div class="modal-desc">
+      ${project.description}
+    </div>
+    <div class="modal-btns">
+      <a href="${project.demoUrl}" target="_blank" class="btn btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Live Demo
+      </a>
+      <a href="${project.githubUrl}" target="_blank" class="btn btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+        GitHub Code
+      </a>
+    </div>
+  `;
+
+  // Trigger modal visibility
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden"; // Prevent scrolling behind modal
+}
+
+function setupModalClose() {
+  const modal = document.getElementById("project-modal");
+  const closeBtn = document.getElementById("modal-close");
+
+  const closeModal = () => {
+    modal.classList.remove("active");
+    document.body.style.overflow = ""; // Re-enable scrolling
+  };
+
+  closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Close with Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("active")) {
+      closeModal();
+    }
+  });
+}
+
+// 7. CONTACT FORM SUBMISSION TO LOCALSTORAGE
+function setupContactForm() {
+  const form = document.getElementById("contact-form");
+  const alertBox = document.getElementById("form-alert");
+
+  if (!form) return;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    // Get form inputs
+    const name = document.getElementById("form-name").value.trim();
+    const email = document.getElementById("form-email").value.trim();
+    const subject = document.getElementById("form-subject").value.trim();
+    const message = document.getElementById("form-message").value.trim();
+
+    // Validation
+    if (!name || !email || !subject || !message) {
+      alert("Harap isi semua kolom formulir.");
+      return;
+    }
+
+    // Create new message object
+    const newMessage = {
+      id: "msg_" + Date.now(),
+      name,
+      email,
+      subject,
+      message,
+      date: new Date().toISOString(),
+      read: false
+    };
+
+    // Get existing messages and append
+    const messages = JSON.parse(SafeStorage.getItem("daffa_portfolio_messages")) || [];
+    messages.push(newMessage);
+    SafeStorage.setItem("daffa_portfolio_messages", JSON.stringify(messages));
+
+    // Show success alert
+    alertBox.className = "form-alert success";
+    alertBox.innerText = `Terima kasih, ${name}! Pesan Anda berhasil dikirim. Pesan ini dapat Anda baca di dashboard admin nantinya.`;
+    alertBox.style.display = "block";
+
+    // Reset form fields
+    form.reset();
+
+    // Hide alert after 8 seconds
+    setTimeout(() => {
+      alertBox.style.display = "none";
+    }, 8000);
+  });
+}
