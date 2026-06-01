@@ -84,6 +84,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupContactForm();
   setupModalClose();
   setupSkillsAnimation();
+  setupScrollProgress();
+  setupScrollReveal();
 });
 
 // 1. RENDER PROFILE (Hero & About Me)
@@ -96,7 +98,9 @@ function renderProfile() {
   if (heroNameEl) heroNameEl.innerHTML = `Halo, Saya <span>${profile.name}</span>`;
 
   const heroTitleEl = document.getElementById("hero-title");
-  if (heroTitleEl) heroTitleEl.innerText = profile.title;
+  if (heroTitleEl) {
+    runTypewriter(heroTitleEl, profile.title);
+  }
 
   const heroDescEl = document.getElementById("hero-desc") || document.getElementById("hero-bio");
   if (heroDescEl) heroDescEl.innerText = profile.bio;
@@ -189,12 +193,12 @@ function renderSkills() {
   };
 
   // Render each category block
-  Object.keys(categories).forEach(cat => {
+  Object.keys(categories).forEach((cat, idx) => {
     const catSkills = categories[cat];
     const icon = categoryIcons[cat] || `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
 
     const card = document.createElement("div");
-    card.className = "skills-card";
+    card.className = `skills-card scroll-reveal stagger-${(idx % 3) + 1}`;
 
     let skillsHTML = "";
     catSkills.forEach(skill => {
@@ -246,11 +250,10 @@ function renderProjects(filterCategory = "All") {
     return;
   }
 
-  filteredProjects.forEach(proj => {
+  filteredProjects.forEach((proj, idx) => {
     const card = document.createElement("div");
-    card.className = "project-card";
+    card.className = `project-card scroll-reveal stagger-${(idx % 3) + 1}`;
     card.dataset.id = proj.id;
-    card.style.animation = "fadeIn 0.4s ease forwards";
 
     // Thumbnail display
     let thumbnailHTML = "";
@@ -318,9 +321,9 @@ function renderTimeline() {
     if (!experiences || experiences.length === 0) {
       expTarget.innerHTML = "<p>Belum ada riwayat pengalaman.</p>";
     } else {
-      experiences.forEach(exp => {
+      experiences.forEach((exp, idx) => {
         const item = document.createElement("div");
-        item.className = "timeline-item";
+        item.className = `timeline-item scroll-reveal stagger-${(idx % 3) + 1}`;
 
         const descList = exp.description.map(desc => `<li>${desc}</li>`).join("");
 
@@ -346,9 +349,9 @@ function renderTimeline() {
     if (!educations || educations.length === 0) {
       eduTarget.innerHTML = "<p>Belum ada riwayat pendidikan.</p>";
     } else {
-      educations.forEach(edu => {
+      educations.forEach((edu, idx) => {
         const item = document.createElement("div");
-        item.className = "timeline-item";
+        item.className = `timeline-item scroll-reveal stagger-${(idx % 3) + 1}`;
 
         item.innerHTML = `
           <div class="timeline-period">${edu.period}</div>
@@ -481,6 +484,7 @@ function setupProjectFilters() {
       setTimeout(() => {
         renderProjects(filter);
         grid.style.opacity = 1;
+        setupScrollReveal(); // Re-observe new elements
       }, 150);
     });
   });
@@ -638,4 +642,112 @@ function setupContactForm() {
       alertBox.style.display = "none";
     }, 8000);
   });
+}
+
+// 8. SCROLL REVEAL INITIALIZATION (INTERSECTION OBSERVER)
+let revealObserver = null;
+function setupScrollReveal() {
+  if (revealObserver) {
+    revealObserver.disconnect();
+  }
+
+  const revealElements = document.querySelectorAll(".scroll-reveal");
+
+  revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("active");
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.1,
+    rootMargin: "0px 0px -40px 0px"
+  });
+
+  revealElements.forEach(el => {
+    if (!el.classList.contains("active")) {
+      revealObserver.observe(el);
+    }
+  });
+}
+
+// 9. SCROLL PROGRESS BAR INDICATOR
+function setupScrollProgress() {
+  const progressBar = document.getElementById("scroll-progress");
+  if (!progressBar) return;
+
+  window.addEventListener("scroll", () => {
+    const windowScroll = window.scrollY || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - window.innerHeight;
+    const scrolled = height > 0 ? (windowScroll / height) * 100 : 0;
+    progressBar.style.width = scrolled + "%";
+  });
+}
+
+// 10. TYPEWRITER EFFECT (ROBUST & COMMAS MULTI-PHRASE CYCLE)
+function runTypewriter(element, textString) {
+  if (!element || element.dataset.typewriterInit === "true") return;
+  element.dataset.typewriterInit = "true";
+
+  // Split by comma to support cycling multiple titles if desired
+  const phrases = textString.split(",").map(p => p.trim()).filter(p => p.length > 0);
+  if (phrases.length === 0) return;
+
+  let phraseIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
+
+  const cursorHTML = '<span class="typewriter-cursor">|</span>';
+  element.innerHTML = cursorHTML;
+
+  function tick() {
+    const currentPhrase = phrases[phraseIndex];
+
+    if (isDeleting) {
+      element.innerHTML = currentPhrase.substring(0, charIndex - 1) + cursorHTML;
+      charIndex--;
+    } else {
+      element.innerHTML = currentPhrase.substring(0, charIndex + 1) + cursorHTML;
+      charIndex++;
+    }
+
+    // Organic speed variance (typing speeds between 60ms and 110ms)
+    let delta = 90 - Math.random() * 40;
+
+    if (isDeleting) {
+      delta /= 2.5; // Deleting is much faster than typing
+    } else {
+      // Humanized pause rhythm on specific characters
+      const lastChar = currentPhrase.charAt(charIndex - 1);
+      if (lastChar === ' ') {
+        delta += 140; // Pause slightly on word spacing
+      } else if (lastChar === ',' || lastChar === '&') {
+        delta += 240; // Pause longer on punctuation/commas
+      }
+    }
+
+    if (!isDeleting && charIndex === currentPhrase.length) {
+      // Fully typed: render final text + cursor
+      element.innerHTML = currentPhrase + cursorHTML;
+      
+      // If we have more than one phrase, cycle it. Otherwise, STOP ticking to let cursor blink forever!
+      if (phrases.length > 1) {
+        isDeleting = true;
+        setTimeout(tick, 2500); // 2.5 seconds pause
+      }
+      return;
+    } else if (isDeleting && charIndex === 0) {
+      // Fully deleted: switch to next phrase
+      element.innerHTML = cursorHTML;
+      isDeleting = false;
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+      setTimeout(tick, 650); // 0.65s pause before typing next word
+      return;
+    }
+
+    setTimeout(tick, delta);
+  }
+
+  tick();
 }

@@ -133,22 +133,97 @@ function initProfileForm() {
   const form = document.getElementById("form-profile");
   const btnReset = document.getElementById("btn-reset-profile");
   
+  const fileInput = document.getElementById("profile-avatar-file");
+  const chooseBtn = document.getElementById("btn-choose-profile");
+  const deleteBtn = document.getElementById("btn-delete-avatar");
+  const hiddenInput = document.getElementById("profile-avatar");
+  const nameInput = document.getElementById("profile-name");
+
+  // Helper function to update avatar preview box
+  const updateAvatarPreview = (avatarUrl) => {
+    const previewBox = document.getElementById("profile-avatar-preview");
+    if (!previewBox) return;
+
+    if (avatarUrl) {
+      previewBox.innerHTML = `<img src="${avatarUrl}" alt="Avatar Preview">`;
+      if (deleteBtn) deleteBtn.style.display = "inline-flex";
+    } else {
+      const name = nameInput ? nameInput.value.trim() : "D";
+      const initials = name ? name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase() : "D";
+      previewBox.innerHTML = initials;
+      if (deleteBtn) deleteBtn.style.display = "none";
+    }
+  };
+
+  // Trigger file input on click
+  if (chooseBtn && fileInput) {
+    chooseBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+  }
+
+  // Handle file picker selection
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (file.size > 1.5 * 1024 * 1024) {
+          alert("Ukuran file terlalu besar! Maksimal ukuran adalah 1.5MB.");
+          fileInput.value = "";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64String = event.target.result;
+          if (hiddenInput) hiddenInput.value = base64String;
+          updateAvatarPreview(base64String);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  // Handle deleting profile photo
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => {
+      if (hiddenInput) hiddenInput.value = "";
+      if (fileInput) fileInput.value = "";
+      updateAvatarPreview("");
+    });
+  }
+
+  // Handle live initials update on name change
+  if (nameInput) {
+    nameInput.addEventListener("input", () => {
+      if (hiddenInput && !hiddenInput.value) {
+        updateAvatarPreview("");
+      }
+    });
+  }
+  
   const fillForm = () => {
     const data = AppState.getData();
     const profile = data.profile;
 
-    document.getElementById("profile-name").value = profile.name || "";
+    if (nameInput) nameInput.value = profile.name || "";
     document.getElementById("profile-title").value = profile.title || "";
     document.getElementById("profile-bio").value = profile.bio || "";
     document.getElementById("profile-location").value = profile.location || "";
     document.getElementById("profile-email").value = profile.email || "";
-    document.getElementById("profile-avatar").value = profile.avatar || "";
+    if (hiddenInput) hiddenInput.value = profile.avatar || "";
     document.getElementById("profile-resume").value = profile.resumeUrl === "#" ? "" : profile.resumeUrl;
 
     document.getElementById("profile-github").value = profile.github || "";
     document.getElementById("profile-linkedin").value = profile.linkedin || "";
     document.getElementById("profile-instagram").value = profile.instagram || "";
     document.getElementById("profile-twitter").value = profile.twitter || "";
+
+    // Clear file input value just in case
+    if (fileInput) fileInput.value = "";
+    
+    // Update live preview
+    updateAvatarPreview(profile.avatar || "");
   };
 
   fillForm();
@@ -157,12 +232,12 @@ function initProfileForm() {
     e.preventDefault();
     const data = AppState.getData();
     
-    data.profile.name = document.getElementById("profile-name").value.trim();
+    data.profile.name = nameInput ? nameInput.value.trim() : "";
     data.profile.title = document.getElementById("profile-title").value.trim();
     data.profile.bio = document.getElementById("profile-bio").value.trim();
     data.profile.location = document.getElementById("profile-location").value.trim();
     data.profile.email = document.getElementById("profile-email").value.trim();
-    data.profile.avatar = document.getElementById("profile-avatar").value.trim();
+    data.profile.avatar = hiddenInput ? hiddenInput.value.trim() : "";
     data.profile.resumeUrl = document.getElementById("profile-resume").value.trim() || "#";
 
     data.profile.github = document.getElementById("profile-github").value.trim();
