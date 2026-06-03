@@ -28,6 +28,13 @@ const AppState = {
     if (localData) {
       try {
         this.data = JSON.parse(localData);
+        // Auto-merge new properties from default portfolio data (like web3formsKey)
+        if (this.data && this.data.profile && window.defaultPortfolioData && window.defaultPortfolioData.profile) {
+          if (this.data.profile.web3formsKey === undefined) {
+            this.data.profile.web3formsKey = window.defaultPortfolioData.profile.web3formsKey;
+            this.save();
+          }
+        }
       } catch (e) {
         console.error("Error parsing portfolio data, resetting to default:", e);
         this.resetToDefault();
@@ -213,6 +220,7 @@ function initProfileForm() {
     document.getElementById("profile-email").value = profile.email || "";
     if (hiddenInput) hiddenInput.value = profile.avatar || "";
     document.getElementById("profile-resume").value = profile.resumeUrl === "#" ? "" : profile.resumeUrl;
+    document.getElementById("profile-web3forms").value = profile.web3formsKey || "";
 
     document.getElementById("profile-github").value = profile.github || "";
     document.getElementById("profile-linkedin").value = profile.linkedin || "";
@@ -239,6 +247,7 @@ function initProfileForm() {
     data.profile.email = document.getElementById("profile-email").value.trim();
     data.profile.avatar = hiddenInput ? hiddenInput.value.trim() : "";
     data.profile.resumeUrl = document.getElementById("profile-resume").value.trim() || "#";
+    data.profile.web3formsKey = document.getElementById("profile-web3forms").value.trim() || "";
 
     data.profile.github = document.getElementById("profile-github").value.trim();
     data.profile.linkedin = document.getElementById("profile-linkedin").value.trim();

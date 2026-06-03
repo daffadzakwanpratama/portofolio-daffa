@@ -33,6 +33,13 @@ const AppState = {
         if (this.data && this.data.profile && this.data.profile.name === "Daffa Ardiansyah") {
           this.resetToDefault();
         }
+        // Auto-merge new properties from default portfolio data (like web3formsKey)
+        if (this.data && this.data.profile && window.defaultPortfolioData && window.defaultPortfolioData.profile) {
+          if (this.data.profile.web3formsKey === undefined) {
+            this.data.profile.web3formsKey = window.defaultPortfolioData.profile.web3formsKey;
+            this.save();
+          }
+        }
       } catch (e) {
         console.error("Error parsing portfolio data, resetting to default:", e);
         this.resetToDefault();
@@ -591,14 +598,15 @@ function setupModalClose() {
   });
 }
 
-// 7. CONTACT FORM SUBMISSION TO LOCALSTORAGE
+// 7. CONTACT FORM SUBMISSION TO LOCALSTORAGE & WEB3FORMS API
 function setupContactForm() {
   const form = document.getElementById("contact-form");
   const alertBox = document.getElementById("form-alert");
+  const submitBtn = document.getElementById("btn-submit-message");
 
   if (!form) return;
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     // Get form inputs
@@ -613,34 +621,100 @@ function setupContactForm() {
       return;
     }
 
-    // Create new message object
-    const newMessage = {
-      id: "msg_" + Date.now(),
-      name,
-      email,
-      subject,
-      message,
-      date: new Date().toISOString(),
-      read: false
-    };
+    const data = AppState.getData();
+    const profile = data ? data.profile : null;
+    const web3formsKey = profile ? profile.web3formsKey : "";
 
-    // Get existing messages and append
-    const messages = JSON.parse(SafeStorage.getItem("daffa_portfolio_messages")) || [];
-    messages.push(newMessage);
-    SafeStorage.setItem("daffa_portfolio_messages", JSON.stringify(messages));
+    // Check if Web3Forms is configured
+    const isWeb3FormsConfigured = web3formsKey && 
+                                  web3formsKey !== "YOUR_WEB3FORMS_ACCESS_KEY" && 
+                                  web3formsKey.trim() !== "";
 
-    // Show success alert
-    alertBox.className = "form-alert success";
-    alertBox.innerText = `Terima kasih, ${name}! Pesan Anda berhasil dikirim. Pesan ini dapat Anda baca di dashboard admin nantinya.`;
-    alertBox.style.display = "block";
+    if (isWeb3FormsConfigured) {
+      // Use Web3Forms API
+      const originalBtnHTML = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Mengirim...";
 
-    // Reset form fields
-    form.reset();
+      try {
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            access_key: web3formsKey,
+            name: name,
+            email: email,
+            subject: subject,
+            message: message,
+            from_name: name + " (Melalui Portofolio)"
+          })
+        });
 
-    // Hide alert after 8 seconds
-    setTimeout(() => {
-      alertBox.style.display = "none";
-    }, 8000);
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Show success alert
+          alertBox.className = "form-alert success";
+          alertBox.innerText = `Terima kasih, ${name}! Pesan Anda telah berhasil dikirim ke email saya.`;
+          alertBox.style.display = "block";
+          form.reset();
+        } else {
+          // API error response
+          alertBox.className = "form-alert error";
+          alertBox.innerText = `Gagal mengirim pesan: ${result.message || "Kesalahan pada server Web3Forms."}`;
+          alertBox.style.display = "block";
+        }
+      } catch (error) {
+        // Network error
+        console.error("Error submitting to Web3Forms:", error);
+        alertBox.className = "form-alert error";
+        alertBox.innerText = "Terjadi kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.";
+        alertBox.style.display = "block";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHTML;
+        
+        // Hide alert after 8 seconds
+        setTimeout(() => {
+          alertBox.style.display = "none";
+        }, 8000);
+      }
+    } else {
+      // LocalStorage Fallback (For local testing / missing key)
+      console.warn("Web3Forms Access Key is not configured. Falling back to local storage saving.");
+
+      // Create new message object
+      const newMessage = {
+        id: "msg_" + Date.now(),
+        name,
+        email,
+        subject,
+        message,
+        date: new Date().toISOString(),
+        read: false
+      };
+
+      // Get existing messages and append
+      const messages = JSON.parse(SafeStorage.getItem("daffa_portfolio_messages")) || [];
+      messages.push(newMessage);
+      SafeStorage.setItem("daffa_portfolio_messages", JSON.stringify(messages));
+
+      // Show success alert indicating local fallback
+      alertBox.className = "form-alert success";
+      alertBox.innerText = `[Uji Coba Lokal] Terima kasih, ${name}! Pesan Anda disimpan secara lokal karena Web3Forms Access Key belum dikonfigurasi.`;
+      alertBox.style.display = "block";
+
+      // Reset form fields
+      form.reset();
+
+      // Hide alert after 8 seconds
+      setTimeout(() => {
+        alertBox.style.display = "none";
+      }, 8000);
+    }
   });
 }
 
