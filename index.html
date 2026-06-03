@@ -27,7 +27,7 @@
   <header class="header" id="header">
     <div class="container">
       <a href="#hero" class="logo" id="nav-logo">
-        ⚡ <span>Daffa<span>.</span></span>
+        <span class="logo-icon">⚡</span> <span>Daffa<span>.</span></span>
       </a>
 
       <!-- Desktop Navigation Menu -->
@@ -47,10 +47,17 @@
         <span></span>
       </button>
     </div>
-    <!-- Scroll Progress Bar -->
-    <div class="scroll-progress-container">
-      <div class="scroll-progress-bar" id="scroll-progress"></div>
-    </div>
+    <!-- SVG Border Progress -->
+    <svg class="header-border-svg" id="header-border-svg">
+      <defs>
+        <linearGradient id="header-border-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#111111" />
+          <stop offset="50%" stop-color="#3b82f6" />
+          <stop offset="100%" stop-color="#6366f1" />
+        </linearGradient>
+      </defs>
+      <rect class="header-border-rect" id="header-border-rect" rx="32" ry="32" x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" fill="none" stroke="url(#header-border-grad)" stroke-width="2" />
+    </svg>
   </header>
 
   <main>

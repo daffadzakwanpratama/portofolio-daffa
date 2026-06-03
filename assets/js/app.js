@@ -33,10 +33,18 @@ const AppState = {
         if (this.data && this.data.profile && this.data.profile.name === "Daffa Ardiansyah") {
           this.resetToDefault();
         }
-        // Auto-merge new properties from default portfolio data (like web3formsKey)
+        // Auto-merge new properties from default portfolio data (like web3formsKey and experienceYears)
         if (this.data && this.data.profile && window.defaultPortfolioData && window.defaultPortfolioData.profile) {
+          let updated = false;
           if (this.data.profile.web3formsKey === undefined) {
             this.data.profile.web3formsKey = window.defaultPortfolioData.profile.web3formsKey;
+            updated = true;
+          }
+          if (this.data.profile.experienceYears === undefined) {
+            this.data.profile.experienceYears = window.defaultPortfolioData.profile.experienceYears;
+            updated = true;
+          }
+          if (updated) {
             this.save();
           }
         }
@@ -127,6 +135,16 @@ function renderProfile() {
 
   const locationEl = document.getElementById("detail-location");
   if (locationEl) locationEl.innerText = profile.location;
+
+  const projectCountEl = document.getElementById("stat-projects-count");
+  if (projectCountEl) {
+    projectCountEl.innerText = data.projects ? data.projects.length : 0;
+  }
+
+  const experienceYearsEl = document.getElementById("stat-experience-years");
+  if (experienceYearsEl) {
+    experienceYearsEl.innerText = profile.experienceYears || "1+";
+  }
 
   // Set Social Links
   const socialContainers = document.querySelectorAll(".social-links-target");
@@ -747,16 +765,31 @@ function setupScrollReveal() {
 }
 
 // 9. SCROLL PROGRESS BAR INDICATOR
+// 9. SCROLL PROGRESS BAR INDICATOR (BORDER WRAP AROUND NAVBAR)
 function setupScrollProgress() {
-  const progressBar = document.getElementById("scroll-progress");
-  if (!progressBar) return;
+  const rect = document.getElementById("header-border-rect");
+  if (!rect) return;
 
-  window.addEventListener("scroll", () => {
+  const updateProgress = () => {
+    const totalLength = rect.getTotalLength();
+    rect.style.strokeDasharray = totalLength;
+
     const windowScroll = window.scrollY || document.documentElement.scrollTop;
     const height = document.documentElement.scrollHeight - window.innerHeight;
-    const scrolled = height > 0 ? (windowScroll / height) * 100 : 0;
-    progressBar.style.width = scrolled + "%";
-  });
+    const scrolled = height > 0 ? windowScroll / height : 0;
+
+    // Draw the progress border
+    rect.style.strokeDashoffset = totalLength - (totalLength * scrolled);
+  };
+
+  // Run on scroll
+  window.addEventListener("scroll", updateProgress);
+
+  // Run on resize to recalculate path length (since it is responsive)
+  window.addEventListener("resize", updateProgress);
+
+  // Initial call (with a brief delay to ensure layout has rendered)
+  setTimeout(updateProgress, 100);
 }
 
 // 10. TYPEWRITER EFFECT (ROBUST & COMMAS MULTI-PHRASE CYCLE)

@@ -28,10 +28,18 @@ const AppState = {
     if (localData) {
       try {
         this.data = JSON.parse(localData);
-        // Auto-merge new properties from default portfolio data (like web3formsKey)
+        // Auto-merge new properties from default portfolio data (like web3formsKey and experienceYears)
         if (this.data && this.data.profile && window.defaultPortfolioData && window.defaultPortfolioData.profile) {
+          let updated = false;
           if (this.data.profile.web3formsKey === undefined) {
             this.data.profile.web3formsKey = window.defaultPortfolioData.profile.web3formsKey;
+            updated = true;
+          }
+          if (this.data.profile.experienceYears === undefined) {
+            this.data.profile.experienceYears = window.defaultPortfolioData.profile.experienceYears;
+            updated = true;
+          }
+          if (updated) {
             this.save();
           }
         }
@@ -221,6 +229,7 @@ function initProfileForm() {
     if (hiddenInput) hiddenInput.value = profile.avatar || "";
     document.getElementById("profile-resume").value = profile.resumeUrl === "#" ? "" : profile.resumeUrl;
     document.getElementById("profile-web3forms").value = profile.web3formsKey || "";
+    document.getElementById("profile-experience-years").value = profile.experienceYears || "";
 
     document.getElementById("profile-github").value = profile.github || "";
     document.getElementById("profile-linkedin").value = profile.linkedin || "";
@@ -248,6 +257,7 @@ function initProfileForm() {
     data.profile.avatar = hiddenInput ? hiddenInput.value.trim() : "";
     data.profile.resumeUrl = document.getElementById("profile-resume").value.trim() || "#";
     data.profile.web3formsKey = document.getElementById("profile-web3forms").value.trim() || "";
+    data.profile.experienceYears = document.getElementById("profile-experience-years").value.trim() || "";
 
     data.profile.github = document.getElementById("profile-github").value.trim();
     data.profile.linkedin = document.getElementById("profile-linkedin").value.trim();

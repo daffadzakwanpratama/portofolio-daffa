@@ -12,7 +12,8 @@ const defaultPortfolioData = {
     linkedin: "https://linkedin.com",
     instagram: "https://instagram.com",
     twitter: "https://twitter.com",
-    web3formsKey: "59d79ac1-5395-4856-8f15-6f15f8f522c7"
+    web3formsKey: "59d79ac1-5395-4856-8f15-6f15f8f522c7",
+    experienceYears: "1+"
   },
   skills: [
     // Frontend
