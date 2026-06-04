@@ -101,6 +101,11 @@ document.addEventListener("DOMContentLoaded", () => {
   setupSkillsAnimation();
   setupScrollProgress();
   setupScrollReveal();
+  setupInteractiveBackground();
+  setupCustomCursor();
+  setupProjectCard3DTilt();
+  setupMagneticButtons();
+  setupThemeToggle();
 });
 
 // 1. RENDER PROFILE (Hero & About Me)
@@ -286,11 +291,18 @@ function renderProjects(filterCategory = "All") {
       thumbnailHTML = `<img src="${proj.thumbnail}" alt="${proj.title}" style="width: 100%; height: 100%; object-fit: cover;">`;
     } else {
       // Premium placeholder gradient using HSL based on project title
+      const isDark = document.documentElement.classList.contains("dark-mode");
       const hue = proj.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+      const bg = isDark
+        ? `linear-gradient(135deg, hsl(${hue}, 40%, 15%) 0%, hsl(${(hue + 40) % 360}, 45%, 10%) 100%)`
+        : `linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%)`;
+      const strokeColor = isDark ? `hsl(${hue}, 50%, 65%)` : `hsl(${hue}, 60%, 45%)`;
+      const textColor = isDark ? `hsl(${hue}, 55%, 75%)` : `hsl(${hue}, 60%, 40%)`;
+
       thumbnailHTML = `
-        <div class="project-thumb-placeholder" style="background: linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(${hue}, 60%, 45%)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-          <span style="font-size: 0.8rem; font-weight: 700; color: hsl(${hue}, 60%, 40%); text-transform: uppercase; letter-spacing: 0.05em;">${proj.category}</span>
+        <div class="project-thumb-placeholder" style="background: ${bg}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: ${strokeColor}"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span style="font-size: 0.8rem; font-weight: 700; color: ${textColor}; text-transform: uppercase; letter-spacing: 0.05em;">${proj.category}</span>
         </div>
       `;
     }
@@ -554,10 +566,16 @@ function openProjectModal(projectId) {
   if (project.thumbnail) {
     thumbnailHTML = `<img src="${project.thumbnail}" alt="${project.title}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius-sm)">`;
   } else {
+    const isDark = document.documentElement.classList.contains("dark-mode");
     const hue = project.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+    const bg = isDark
+      ? `linear-gradient(135deg, hsl(${hue}, 40%, 15%) 0%, hsl(${(hue + 40) % 360}, 45%, 10%) 100%)`
+      : `linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%)`;
+    const strokeColor = isDark ? `hsl(${hue}, 50%, 65%)` : `hsl(${hue}, 60%, 45%)`;
+
     thumbnailHTML = `
-      <div class="project-thumb-placeholder" style="background: linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%); width:100%; height:100%; border-radius: var(--radius-sm)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(${hue}, 60%, 45%)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+      <div class="project-thumb-placeholder" style="background: ${bg}; width:100%; height:100%; border-radius: var(--radius-sm)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: ${strokeColor}"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
       </div>
     `;
   }
@@ -857,4 +875,384 @@ function runTypewriter(element, textString) {
   }
 
   tick();
+}
+
+// 11. INTERACTIVE CANVAS PARTICLE BACKGROUND
+function setupInteractiveBackground() {
+  const canvas = document.getElementById("interactive-bg");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  let particles = [];
+  let mouse = { x: null, y: null, radius: 180 };
+
+  // Set canvas size
+  const resizeCanvas = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  // Track mouse position
+  window.addEventListener("mousemove", (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+
+  window.addEventListener("mouseleave", () => {
+    mouse.x = null;
+    mouse.y = null;
+  });
+
+  // Particle Class
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.45; // slightly faster drift
+      this.vy = (Math.random() - 0.5) * 0.45;
+      this.radius = Math.random() * 3 + 1.5; // larger size: 1.5px to 4.5px
+      this.baseRadius = this.radius;
+    }
+
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(99, 102, 241, 0.35)"; // Premium visible indigo blue
+      ctx.fill();
+    }
+
+    update() {
+      // Move particle
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // Wrap around screen edges
+      if (this.x < 0) this.x = canvas.width;
+      if (this.x > canvas.width) this.x = 0;
+      if (this.y < 0) this.y = canvas.height;
+      if (this.y > canvas.height) this.y = 0;
+
+      // Mouse interaction (repulsion)
+      if (mouse.x !== null && mouse.y !== null) {
+        const dx = mouse.x - this.x;
+        const dy = mouse.y - this.y;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < mouse.radius) {
+          // Push away from mouse
+          const force = (mouse.radius - distance) / mouse.radius;
+          const angle = Math.atan2(dy, dx);
+          
+          // Move opposite to mouse direction
+          this.x -= Math.cos(angle) * force * 1.5;
+          this.y -= Math.sin(angle) * force * 1.5;
+          
+          // Slightly grow the dot when near mouse for micro-interaction
+          this.radius = this.baseRadius + force * 2.5;
+        } else {
+          // Smoothly return to base size
+          if (this.radius > this.baseRadius) {
+            this.radius -= 0.1;
+          }
+        }
+      } else {
+        // Smoothly return to base size
+        if (this.radius > this.baseRadius) {
+          this.radius -= 0.1;
+        }
+      }
+
+      this.draw();
+    }
+  }
+
+  // Initialize particles
+  const initParticles = () => {
+    particles = [];
+    const density = (canvas.width * canvas.height) / 18000; // responsive count
+    const count = Math.min(Math.max(density, 40), 120); // bounds
+    for (let i = 0; i < count; i++) {
+      particles.push(new Particle());
+    }
+  };
+  initParticles();
+  window.addEventListener("resize", initParticles);
+
+  // Draw lines connecting close particles
+  const drawLines = () => {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < 110) {
+          // Draw line with opacity proportional to proximity
+          const opacity = (110 - distance) / 110 * 0.18; // stronger lines
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(99, 102, 241, ${opacity})`; // indigo lines
+          ctx.lineWidth = 0.9;
+          ctx.stroke();
+        }
+      }
+
+      // Draw connection to mouse
+      if (mouse.x !== null && mouse.y !== null) {
+        const dx = particles[i].x - mouse.x;
+        const dy = particles[i].y - mouse.y;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < mouse.radius) {
+          const opacity = (mouse.radius - distance) / mouse.radius * 0.32; // stronger attraction lines
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(mouse.x, mouse.y);
+          ctx.strokeStyle = `rgba(99, 102, 241, ${opacity})`; // visible indigo connection to cursor
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
+      }
+    }
+  };
+
+  // Animation Loop
+  const animate = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Update and draw particles
+    particles.forEach(p => p.update());
+    
+    // Draw connections
+    drawLines();
+    
+    requestAnimationFrame(animate);
+  };
+  animate();
+}
+
+// 12. INTERACTIVE CUSTOM CURSOR
+function setupCustomCursor() {
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isTouchDevice || window.innerWidth <= 768) return;
+
+  const dot = document.getElementById("custom-cursor-dot");
+  const outline = document.getElementById("custom-cursor-outline");
+
+  if (!dot || !outline) return;
+
+  let mouseX = 0, mouseY = 0;
+  let outlineX = 0, outlineY = 0;
+
+  window.addEventListener("mousemove", (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+
+    dot.style.opacity = 1;
+    outline.style.opacity = 1;
+
+    dot.style.left = mouseX + "px";
+    dot.style.top = mouseY + "px";
+  });
+
+  const animateOutline = () => {
+    outlineX += (mouseX - outlineX) * 0.16;
+    outlineY += (mouseY - outlineY) * 0.16;
+
+    outline.style.left = outlineX + "px";
+    outline.style.top = outlineY + "px";
+
+    requestAnimationFrame(animateOutline);
+  };
+  animateOutline();
+
+  document.addEventListener("mouseleave", () => {
+    dot.style.opacity = 0;
+    outline.style.opacity = 0;
+  });
+
+  document.addEventListener("mouseenter", () => {
+    dot.style.opacity = 1;
+    outline.style.opacity = 1;
+  });
+
+  document.addEventListener("mouseover", (e) => {
+    const hoverTarget = e.target.closest("a, button, .filter-btn, .social-link, .modal-close");
+    if (hoverTarget) {
+      outline.classList.add("cursor-hover");
+    }
+
+    const projectTarget = e.target.closest(".project-card");
+    if (projectTarget) {
+      outline.classList.add("cursor-project");
+    }
+  });
+
+  document.addEventListener("mouseout", (e) => {
+    const hoverTarget = e.target.closest("a, button, .filter-btn, .social-link, .modal-close");
+    if (hoverTarget) {
+      outline.classList.remove("cursor-hover");
+    }
+
+    const projectTarget = e.target.closest(".project-card");
+    if (projectTarget) {
+      outline.classList.remove("cursor-project");
+    }
+  });
+}
+
+// 13. 3D TILT EFFECT ON PROJECT CARDS
+function setupProjectCard3DTilt() {
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isTouchDevice || window.innerWidth <= 768) return;
+
+  let activeCard = null;
+
+  document.addEventListener("mousemove", (e) => {
+    const card = e.target.closest(".project-card");
+
+    if (card) {
+      if (activeCard && activeCard !== card) {
+        resetCardTilt(activeCard);
+      }
+      activeCard = card;
+      applyCardTilt(e, card);
+    } else {
+      if (activeCard) {
+        resetCardTilt(activeCard);
+        activeCard = null;
+      }
+    }
+  });
+
+  function applyCardTilt(e, card) {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const xc = rect.width / 2;
+    const yc = rect.height / 2;
+
+    const maxTilt = 8; // 8 degrees max tilt
+    const rotateX = ((yc - y) / yc) * maxTilt;
+    const rotateY = ((x - xc) / xc) * maxTilt;
+
+    card.style.transition = "transform 0.08s ease-out"; // very fast response
+    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+  }
+
+  function resetCardTilt(card) {
+    card.style.transition = "transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)";
+    card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+  }
+}
+
+// 14. MAGNETIC BUTTONS EFFECT
+function setupMagneticButtons() {
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isTouchDevice || window.innerWidth <= 768) return;
+
+  let activeBtn = null;
+  let cachedCenterX = 0;
+  let cachedCenterY = 0;
+
+  document.addEventListener("mousemove", (e) => {
+    const mx = e.clientX;
+    const my = e.clientY;
+
+    if (activeBtn) {
+      // Calculate distance from cached center coordinates
+      const distX = mx - cachedCenterX;
+      const distY = my - cachedCenterY;
+      const distance = Math.hypot(distX, distY);
+      const threshold = 60; // 60px proximity boundary
+
+      if (distance < threshold) {
+        // Apply smooth magnetic translation (35% pull strength)
+        const pullX = distX * 0.35;
+        const pullY = distY * 0.35;
+        activeBtn.style.transition = "transform 0.08s ease-out";
+        activeBtn.style.transform = `translate3d(${pullX}px, ${pullY}px, 0) scale(1.02)`;
+      } else {
+        // Exited proximity threshold: reset button smoothly
+        resetBtn(activeBtn);
+        activeBtn = null;
+      }
+    } else {
+      // Find visible button in proximity
+      const buttons = document.querySelectorAll(".btn");
+      for (const btn of buttons) {
+        // Quick visibility check (prevent tracking hidden elements)
+        if (btn.offsetWidth === 0 || btn.offsetHeight === 0) continue;
+
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const distX = mx - cx;
+        const distY = my - cy;
+        const distance = Math.hypot(distX, distY);
+        const threshold = 60;
+
+        if (distance < threshold) {
+          activeBtn = btn;
+          cachedCenterX = cx;
+          cachedCenterY = cy;
+
+          // Apply immediate magnetic translation
+          const pullX = distX * 0.35;
+          const pullY = distY * 0.35;
+          btn.style.transition = "transform 0.08s ease-out";
+          btn.style.transform = `translate3d(${pullX}px, ${pullY}px, 0) scale(1.02)`;
+          break;
+        }
+      }
+    }
+  });
+
+  // Reset tracking on scroll to prevent button stickiness
+  window.addEventListener("scroll", () => {
+    if (activeBtn) {
+      resetBtn(activeBtn);
+      activeBtn = null;
+    }
+  });
+
+  function resetBtn(btn) {
+    btn.style.transition = "transform 0.4s cubic-bezier(0.25, 1, 0.5, 1)";
+    btn.style.transform = "translate3d(0, 0, 0) scale(1)";
+  }
+}
+
+// 15. LIGHT/DARK THEME TOGGLE
+function setupThemeToggle() {
+  const toggleBtn = document.getElementById("theme-toggle");
+  if (!toggleBtn) return;
+
+  const syncTheme = (isDark) => {
+    document.documentElement.classList.toggle("dark-mode", isDark);
+    document.body.classList.toggle("dark-mode", isDark);
+    SafeStorage.setItem("daffa_portfolio_theme", isDark ? "dark" : "light");
+  };
+
+  syncTheme(document.documentElement.classList.contains("dark-mode"));
+
+  let switchTimer;
+
+  toggleBtn.addEventListener("click", () => {
+    const targetThemeDark = !document.documentElement.classList.contains("dark-mode");
+
+    window.clearTimeout(switchTimer);
+    document.documentElement.classList.add("theme-switching");
+
+    requestAnimationFrame(() => {
+      syncTheme(targetThemeDark);
+    });
+
+    switchTimer = window.setTimeout(() => {
+      document.documentElement.classList.remove("theme-switching");
+    }, 320);
+  });
 }

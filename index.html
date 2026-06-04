@@ -2,6 +2,16 @@
 <html lang="id">
 
 <head>
+  <script>
+    (function() {
+      try {
+        const theme = localStorage.getItem("daffa_portfolio_theme");
+        if (theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark-mode");
+        }
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daffa | Junior Full Stack Developer Portfolio</title>
@@ -22,6 +32,12 @@
 </head>
 
 <body>
+  <!-- Interactive Canvas Background -->
+  <canvas id="interactive-bg"></canvas>
+
+  <!-- Custom Cursor Elements -->
+  <div class="custom-cursor-dot" id="custom-cursor-dot"></div>
+  <div class="custom-cursor-outline" id="custom-cursor-outline"></div>
 
   <!-- --- HEADER & NAVIGATION --- -->
   <header class="header" id="header">
@@ -39,6 +55,14 @@
         <a href="#timeline" class="nav-link" id="link-timeline">Riwayat</a>
         <a href="#contact" class="nav-link" id="link-contact">Kontak</a>
       </nav>
+
+      <!-- Theme Toggle -->
+      <button class="theme-toggle" id="theme-toggle" aria-label="Ubah Tema">
+        <!-- Sun Icon (visible in dark mode) -->
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <!-- Moon Icon (visible in light mode) -->
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
 
       <!-- Mobile Nav Hamburger Button -->
       <button class="nav-toggle" id="nav-toggle" aria-label="Toggle Menu">
@@ -153,7 +177,7 @@
     </section>
 
     <!-- --- SKILLS SECTION --- -->
-    <section class="section" id="skills" style="background-color: var(--bg-secondary);">
+    <section class="section" id="skills">
       <div class="container">
         <div class="section-header scroll-reveal">
           <span class="section-tag">Teknologi</span>
@@ -194,7 +218,7 @@
     </section>
 
     <!-- --- EXPERIENCE & EDUCATION --- -->
-    <section class="section" id="timeline" style="background-color: var(--bg-secondary);">
+    <section class="section" id="timeline">
       <div class="container">
         <div class="section-header scroll-reveal">
           <span class="section-tag">Perjalanan</span>
