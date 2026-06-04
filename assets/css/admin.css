@@ -4,34 +4,34 @@
   --bg-primary: #fafafa;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f0f0f0;
-  
+
   --text-primary: #111111;
   --text-secondary: #444444;
   --text-muted: #777777;
   --text-light: #cccccc;
-  
+
   --accent: #111111;
   --accent-hover: #444444;
   --accent-light: rgba(17, 17, 17, 0.04);
-  
+
   /* Borders and Shadow */
   --border-light: rgba(0, 0, 0, 0.06);
   --border-focus: rgba(17, 17, 17, 0.4);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.01);
   --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.03);
   --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.05);
-  
+
   /* Typography & Sizing */
   --font-main: 'Plus Jakarta Sans', sans-serif;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-pill: 50px;
-  
+
   /* Transitions */
   --transition-fast: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-normal: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  
+
   --sidebar-width: 280px;
   --header-height: 80px;
 }
@@ -52,7 +52,10 @@ body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   color: var(--text-primary);
   font-weight: 700;
   line-height: 1.25;
@@ -64,13 +67,15 @@ a {
   transition: var(--transition-fast);
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
 /* --- LAYOUT STRUCTURE --- */
 .admin-layout {
-  display: flex;
   min-height: 100vh;
 }
 
@@ -196,17 +201,22 @@ button, input, select, textarea {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 2rem 3rem 4rem 3rem;
+  padding: 2rem clamp(1.25rem, 4vw, 3rem) 4rem clamp(1.25rem, 4vw, 3rem);
   background-color: var(--bg-primary);
 }
 
 .main-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding-bottom: 2rem;
   margin-bottom: 2.5rem;
   border-bottom: 1px solid var(--border-light);
+  gap: 0.5rem;
+}
+
+/* Hidden by default; shown via JS on mobile */
+.mobile-menu-toggle {
+  display: none;
 }
 
 .header-title #greeting-text {
@@ -607,7 +617,7 @@ button, input, select, textarea {
   display: flex;
   gap: 0.5rem;
   margin-top: 1rem;
-  border-top: 1px solid rgba(0,0,0,0.03);
+  border-top: 1px solid rgba(0, 0, 0, 0.03);
   padding-top: 1rem;
   justify-content: flex-end;
 }
@@ -747,49 +757,389 @@ button, input, select, textarea {
   font-size: 0.8rem;
 }
 
-/* --- RESPONSIVE STYLE --- */
+/* ============================================================
+   PROJECTS MANAGER LIST
+   ============================================================ */
+.projects-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.project-manager-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  min-width: 0;
+}
+
+.project-manager-item:hover {
+  border-color: var(--text-light);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Thumbnail */
+.project-manager-thumb {
+  width: 60px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-manager-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.project-manager-thumb svg {
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+
+/* Info area — takes all remaining space */
+.project-manager-info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.project-manager-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+/* Meta chips row */
+.project-manager-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.project-manager-meta-item {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.55rem;
+  border-radius: 50px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-muted);
+  white-space: nowrap;
+  border: 1px solid var(--border-light);
+}
+
+/* Status chip — colour-coded */
+.project-manager-meta-item.meta-status-completed {
+  background-color: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.project-manager-meta-item.meta-status-progress {
+  background-color: rgba(245, 158, 11, 0.08);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+/* Featured badge */
+.project-manager-meta-featured {
+  background-color: rgba(99, 102, 241, 0.08);
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Action buttons — always at right edge, never shrink */
+.project-manager-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* Empty-state message */
+.project-manager-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1.5px dashed var(--border-light);
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   CATEGORIES MANAGER LIST
+   ============================================================ */
+.categories-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.category-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.category-manager-item:hover {
+  border-color: var(--text-light);
+  box-shadow: var(--shadow-sm);
+}
+
+.category-manager-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+/* Coloured dot indicator */
+.category-manager-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.category-manager-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-manager-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* Projects & Categories panel - tighter gap between form and list cards */
+#project-tab-list-view .admin-columns,
+#project-tab-categories-view .admin-columns {
+  gap: 1rem;
+}
+
+/* ============================================================
+   RESPONSIVE STYLE
+   ============================================================ */
 @media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 220px;
+  }
+
   .admin-columns {
     grid-template-columns: 1fr;
   }
+
+  .card {
+    padding: 2rem;
+  }
 }
 
+/* Sidebar overlay toggle on mobile */
 @media (max-width: 768px) {
+  :root {
+    --sidebar-width: 260px;
+  }
+
   .sidebar {
-    width: 80px;
-    padding: 1.5rem 0.75rem;
-    align-items: center;
+    transform: translateX(-100%);
+    transition: transform var(--transition-normal);
+    z-index: 200;
+    box-shadow: var(--shadow-lg);
   }
-  .sidebar-brand {
-    font-size: 1rem;
-    margin-bottom: 2.5rem;
-    padding-left: 0;
-    text-align: center;
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
-  .sidebar-brand span, .sidebar-brand small, .admin-name {
+
+  /* Overlay backdrop */
+  .sidebar-overlay {
     display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 199;
+    backdrop-filter: blur(2px);
   }
-  .menu-item {
-    justify-content: center;
-    padding: 0.85rem;
+
+  .sidebar-overlay.active {
+    display: block;
   }
-  .menu-item svg {
-    margin-right: 0;
-  }
-  .btn-view-portfolio span, .menu-item {
-    font-size: 0;
-  }
-  .btn-view-portfolio {
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-  }
+
   .main-content {
-    margin-left: 80px;
-    padding: 1.5rem;
+    margin-left: 0;
+    padding: 1.5rem 1.25rem 3rem 1.25rem;
   }
+
+  .main-header {
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .header-title h1 {
+    font-size: 1.4rem;
+  }
+
+  /* Mobile menu toggle button */
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    margin-right: 0.75rem;
+  }
+
+  .mobile-menu-toggle:hover {
+    background: var(--bg-tertiary);
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 1.75rem;
+  }
+
+  .project-manager-item {
+    flex-wrap: wrap;
+  }
+
+  .project-manager-thumb {
+    width: 56px;
+    height: 44px;
+  }
+
+  .skill-manager-bar-container {
+    width: 100px;
+    margin-right: 0.75rem;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+
+  .timeline-tabs {
+    flex-wrap: wrap;
+  }
+
+  .avatar-uploader-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .avatar-preview-wrapper {
+    align-self: center;
+  }
+}
+
+/* --- Small Mobile (480px) --- */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 1.25rem 1rem 3rem 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .project-manager-item {
+    gap: 0.75rem;
+  }
+
+  .project-manager-thumb {
+    width: 100%;
+    height: 120px;
+    order: -1;
+  }
+
+  .project-manager-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .skill-manager-bar-container {
+    display: none;
+  }
+
+  .btn {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+  }
+
+  .toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .timeline-manager-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .admin-columns {
+    gap: 1.25rem;
   }
 }

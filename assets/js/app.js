@@ -44,6 +44,10 @@ const AppState = {
             this.data.profile.experienceYears = window.defaultPortfolioData.profile.experienceYears;
             updated = true;
           }
+          if (this.data.projectCategories === undefined) {
+            this.data.projectCategories = window.defaultPortfolioData.projectCategories || ["Frontend", "Backend", "Fullstack"];
+            updated = true;
+          }
           if (updated) {
             this.save();
           }
@@ -88,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render Sections
   renderProfile();
   renderSkills();
+  renderProjectFilters();
   renderProjects("All");
   renderTimeline();
 
@@ -280,7 +285,14 @@ function renderProjects(filterCategory = "All") {
     return;
   }
 
-  filteredProjects.forEach((proj, idx) => {
+  // Sort projects: featured projects first
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return 0;
+  });
+
+  sortedProjects.forEach((proj, idx) => {
     const card = document.createElement("div");
     card.className = `project-card scroll-reveal stagger-${(idx % 3) + 1}`;
     card.dataset.id = proj.id;
@@ -320,13 +332,29 @@ function renderProjects(filterCategory = "All") {
          </div>`
       : "";
 
+    // Determine status badge details
+    const statusLower = (proj.status || "").toLowerCase();
+    let statusLabel = proj.status || "Completed";
+    let statusClass = "status-completed";
+    
+    if (statusLower.includes("complete") || statusLower.includes("selesai")) {
+      statusLabel = "Selesai";
+      statusClass = "status-completed";
+    } else if (statusLower.includes("progress") || statusLower.includes("berlangsung") || statusLower.includes("ongoing") || statusLower.includes("dikerjakan")) {
+      statusLabel = "Dalam Pengerjaan";
+      statusClass = "status-ongoing";
+    }
+
     card.innerHTML = `
       <div class="project-thumb">
         ${thumbnailHTML}
         ${featuredHTML}
       </div>
       <div class="project-body">
-        <span class="project-category">${proj.category}</span>
+        <div class="project-meta-top" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; width: 100%;">
+          <span class="project-category" style="margin-bottom: 0;">${proj.category}</span>
+          <span class="project-status-badge ${statusClass}">${statusLabel}</span>
+        </div>
         <h3 class="project-card-title">${proj.title}</h3>
         <p class="project-excerpt">${proj.description}</p>
         <div class="project-tech">
@@ -504,6 +532,23 @@ function setupScrollSpy() {
   }
 }
 
+// Render Projects Category Filter Tabs dynamically
+function renderProjectFilters() {
+  const container = document.getElementById("project-filters-container");
+  if (!container) return;
+
+  const data = AppState.getData();
+  const categories = data.projectCategories || ["Frontend", "Backend", "Fullstack"];
+
+  let html = `<button class="filter-btn active" data-filter="All" id="filter-all">Semua</button>`;
+  categories.forEach(cat => {
+    const id = `filter-${cat.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
+    html += `<button class="filter-btn" data-filter="${cat}" id="${id}">${cat}</button>`;
+  });
+
+  container.innerHTML = html;
+}
+
 // 4. Projects Category Filter click logic
 function setupProjectFilters() {
   const filterButtons = document.querySelectorAll(".filter-btn");
@@ -583,11 +628,27 @@ function openProjectModal(projectId) {
   // Tech list
   const techHTML = project.technologies.map(tech => `<span class="tech-tag" style="background-color: var(--accent-light); color: var(--accent); font-weight: 700;">${tech}</span>`).join("");
 
+  // Determine status badge details
+  const statusLower = (project.status || "").toLowerCase();
+  let statusLabel = project.status || "Completed";
+  let statusClass = "status-completed";
+  
+  if (statusLower.includes("complete") || statusLower.includes("selesai")) {
+    statusLabel = "Selesai";
+    statusClass = "status-completed";
+  } else if (statusLower.includes("progress") || statusLower.includes("berlangsung") || statusLower.includes("ongoing") || statusLower.includes("dikerjakan")) {
+    statusLabel = "Dalam Pengerjaan";
+    statusClass = "status-ongoing";
+  }
+
   modalBody.innerHTML = `
     <div class="modal-thumb">
       ${thumbnailHTML}
     </div>
-    <span class="project-category" style="font-size: 0.85rem">${project.category}</span>
+    <div class="modal-meta-top" style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; width: 100%;">
+      <span class="project-category" style="font-size: 0.85rem; margin-bottom: 0;">${project.category}</span>
+      <span class="project-status-badge ${statusClass}">${statusLabel}</span>
+    </div>
     <h2 style="font-size: 2rem; margin-top: 0.5rem; letter-spacing: -0.02em;">${project.title}</h2>
     <div class="modal-tech">
       ${techHTML}

@@ -34,6 +34,10 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
           Kelola Keahlian
         </button>
+        <button class="menu-item" data-target="panel-projects" id="btn-tab-projects">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+          Kelola Proyek
+        </button>
         <button class="menu-item" data-target="panel-timeline" id="btn-tab-timeline">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
           Kelola Riwayat
@@ -47,19 +51,19 @@
         </a>
       </div>
     </aside>
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- --- MAIN CONTENT AREA --- -->
     <main class="main-content">
       
-      <!-- Top header bar -->
       <header class="main-header">
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Buka Menu" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <div class="header-title">
           <span id="greeting-text">Selamat Datang, Admin</span>
           <h1 id="panel-title-text">Kelola Profil Portofolio</h1>
-        </div>
-        <div class="header-profile">
-          <div class="avatar-sm" id="admin-avatar">DA</div>
-          <span class="admin-name" id="admin-header-name">Daffa</span>
         </div>
       </header>
 
@@ -253,6 +257,152 @@
             </div>
             
           </div>
+        </section>
+
+        <!-- ================= PANEL 4: PROJECTS & CATEGORIES ================= -->
+        <section class="admin-panel" id="panel-projects">
+          
+          <!-- Sub tab switchers inside projects page -->
+          <div class="timeline-tabs">
+            <button class="tab-btn active" data-type="list" id="tab-btn-project-list">Daftar Proyek</button>
+            <button class="tab-btn" data-type="categories" id="tab-btn-project-categories">Kelola Kategori</button>
+          </div>
+
+          <!-- PROJECT TAB 1: LIST & FORM -->
+          <div class="project-tab-content active" id="project-tab-list-view">
+            <div class="admin-columns">
+              <!-- Left Side: Form Add / Edit -->
+              <div class="card">
+                <h2 class="card-title" id="project-form-title">Tambah Proyek Baru</h2>
+                <form id="form-project">
+                  <input type="hidden" id="project-id-hidden">
+                  
+                  <div class="form-group">
+                    <label for="project-title-input" class="form-label">Judul Proyek</label>
+                    <input type="text" id="project-title-input" class="form-input" placeholder="Contoh: QR Code Food Ordering System" required>
+                  </div>
+                  
+                  <div class="form-grid" style="margin-top: 1rem;">
+                    <div class="form-group">
+                      <label for="project-category-select" class="form-label">Kategori</label>
+                      <select id="project-category-select" class="form-input" required>
+                        <!-- Dynamically filled with JS -->
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="project-status-select" class="form-label">Status Proyek</label>
+                      <select id="project-status-select" class="form-input" required>
+                        <option value="Completed">Selesai (Completed)</option>
+                        <option value="Ongoing">Dalam Pengerjaan (Ongoing)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label">Gambar Thumbnail</label>
+                    <div class="avatar-uploader-container">
+                      <div class="avatar-preview-wrapper">
+                        <div class="avatar-preview-box" id="project-thumb-preview" style="border-radius: 4px; width: 80px; height: 60px;">
+                          <!-- Diisi secara dinamis oleh JavaScript -->
+                        </div>
+                      </div>
+                      <div class="avatar-upload-actions">
+                        <div class="avatar-upload-actions-buttons">
+                          <button type="button" class="btn btn-secondary" id="btn-choose-project-thumb">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            Pilih Gambar
+                          </button>
+                          <button type="button" class="btn btn-danger" id="btn-delete-project-thumb" style="display: none;">
+                            Hapus
+                          </button>
+                        </div>
+                        <input type="file" id="project-thumb-file" accept="image/*" style="display: none;">
+                        <input type="hidden" id="project-thumbnail" value="">
+                        <small style="color: var(--text-muted); font-size: 0.75rem;">Mendukung berkas JPG, PNG, atau GIF (Maks. 2MB)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group form-fullwidth" style="margin-top: 1rem;">
+                    <label for="project-description-input" class="form-label">Deskripsi Lengkap Proyek</label>
+                    <textarea id="project-description-input" class="form-input form-textarea" placeholder="Tulis deskripsi proyek, fitur-fitur, dan kontribusi Anda..." required></textarea>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 1rem;">
+                    <label for="project-technologies-input" class="form-label">Teknologi / Stack (Pisahkan dengan Koma)</label>
+                    <input type="text" id="project-technologies-input" class="form-input" placeholder="Contoh: Node.js, Express, PostgreSQL" required>
+                  </div>
+
+                  <div class="form-grid" style="margin-top: 1rem;">
+                    <div class="form-group">
+                      <label for="project-demo-url-input" class="form-label">Demo Live URL</label>
+                      <input type="url" id="project-demo-url-input" class="form-input" placeholder="https://example.com">
+                    </div>
+                    <div class="form-group">
+                      <label for="project-github-url-input" class="form-label">GitHub Repository URL</label>
+                      <input type="url" id="project-github-url-input" class="form-input" placeholder="https://github.com">
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 1.5rem; flex-direction: row; align-items: center; gap: 0.75rem;">
+                    <input type="checkbox" id="project-featured-input" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="project-featured-input" class="form-label" style="text-transform: none; font-size: 0.9rem; cursor: pointer;">Tampilkan sebagai Proyek Unggulan (Featured)</label>
+                  </div>
+                  
+                  <div class="form-actions" style="margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" id="btn-save-project">
+                      Simpan Proyek
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-project" style="display: none;">
+                      Batal
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Right Side: Current List -->
+              <div class="card">
+                <h2 class="card-title">Daftar Proyek Aktif</h2>
+                <div class="projects-manager-list" id="projects-manager-target">
+                  <!-- Dynamically rendered in JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROJECT TAB 2: CATEGORIES -->
+          <div class="project-tab-content" id="project-tab-categories-view" style="display: none;">
+            <div class="admin-columns">
+              <!-- Left Side: Add Form -->
+              <div class="card">
+                <h2 class="card-title" id="category-form-title">Tambah Kategori Baru</h2>
+                <form id="form-category">
+                  <input type="hidden" id="category-index-hidden">
+                  <div class="form-group">
+                    <label for="category-name-input" class="form-label">Nama Kategori</label>
+                    <input type="text" id="category-name-input" class="form-input" placeholder="Contoh: Frontend, Backend" required>
+                  </div>
+                  <div class="form-actions" style="margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" id="btn-save-category">
+                      Simpan Kategori
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-category" style="display: none;">
+                      Batal
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Right Side: List -->
+              <div class="card">
+                <h2 class="card-title">Daftar Kategori Aktif</h2>
+                <div class="categories-manager-list" id="categories-manager-target">
+                  <!-- Dynamically rendered in JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
         </section>
 
       </div>

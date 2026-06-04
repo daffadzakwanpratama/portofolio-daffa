@@ -15,6 +15,7 @@ const defaultPortfolioData = {
     web3formsKey: "59d79ac1-5395-4856-8f15-6f15f8f522c7",
     experienceYears: "1+"
   },
+  projectCategories: ["Frontend", "Backend", "Fullstack"],
   skills: [
     // Frontend
     { id: "s1", name: "HTML5 & CSS3", level: 90, category: "Frontend" },

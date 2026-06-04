@@ -39,6 +39,10 @@ const AppState = {
             this.data.profile.experienceYears = window.defaultPortfolioData.profile.experienceYears;
             updated = true;
           }
+          if (this.data.projectCategories === undefined) {
+            this.data.projectCategories = window.defaultPortfolioData.projectCategories || ["Frontend", "Backend", "Fullstack"];
+            updated = true;
+          }
           if (updated) {
             this.save();
           }
@@ -81,10 +85,64 @@ function showToast(message) {
   }, 3000);
 }
 
+// --- MOBILE SIDEBAR TOGGLE ---
+function initMobileSidebar() {
+  const toggle = document.getElementById("mobile-menu-toggle");
+  const overlay = document.getElementById("sidebar-overlay");
+  const sidebar = document.querySelector(".sidebar");
+
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+
+  function showToggle() {
+    if (toggle) toggle.style.display = isMobile() ? "flex" : "none";
+  }
+
+  function openSidebar() {
+    sidebar && sidebar.classList.add("mobile-open");
+    overlay && overlay.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeSidebar() {
+    sidebar && sidebar.classList.remove("mobile-open");
+    overlay && overlay.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      if (sidebar && sidebar.classList.contains("mobile-open")) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", closeSidebar);
+  }
+
+  // Close sidebar when a menu item is clicked on mobile
+  document.querySelectorAll(".menu-item").forEach(item => {
+    item.addEventListener("click", () => {
+      if (isMobile()) closeSidebar();
+    });
+  });
+
+  showToggle();
+  window.addEventListener("resize", showToggle);
+}
+
 // --- MAIN CONTROLLER ON DOM LOAD ---
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize state
   AppState.init();
+
+  // Setup mobile sidebar
+  initMobileSidebar();
 
   // Setup tab switches
   setupTabNavigation();
@@ -94,6 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initProfileForm();
   initSkillsPanel();
   initTimelinePanel();
+  initProjectsPanel();
 });
 
 // 1. HEADER PROFILE LOADER
@@ -101,14 +160,19 @@ function loadAdminProfileHeader() {
   const data = AppState.getData();
   const profile = data.profile;
 
-  document.getElementById("admin-header-name").innerText = profile.name.split(" ")[0];
+  const headerNameEl = document.getElementById("admin-header-name");
+  if (headerNameEl) {
+    headerNameEl.innerText = profile.name.split(" ")[0];
+  }
   
   const avatar = document.getElementById("admin-avatar");
-  if (profile.avatar) {
-    avatar.innerHTML = `<img src="${profile.avatar}" alt="Admin" style="width:100%; height:100%; object-fit:cover; border-radius:50%">`;
-  } else {
-    const initials = profile.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
-    avatar.innerHTML = initials;
+  if (avatar) {
+    if (profile.avatar) {
+      avatar.innerHTML = `<img src="${profile.avatar}" alt="Admin" style="width:100%; height:100%; object-fit:cover; border-radius:50%">`;
+    } else {
+      const initials = profile.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+      avatar.innerHTML = initials;
+    }
   }
 }
 
@@ -121,7 +185,8 @@ function setupTabNavigation() {
   const titleMap = {
     "panel-profile": "Kelola Profil Portofolio",
     "panel-skills": "Kelola Keahlian & Tech Stack",
-    "panel-timeline": "Kelola Riwayat Hidup (Timeline)"
+    "panel-timeline": "Kelola Riwayat Hidup (Timeline)",
+    "panel-projects": "Kelola Proyek & Kategori"
   };
 
   menuButtons.forEach(btn => {
@@ -774,4 +839,468 @@ function initTimelinePanel() {
       }
     }
   };
+}
+
+// Image compression helper using HTML5 Canvas
+function compressImage(file, maxWidth, maxHeight, quality, callback) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = (event) => {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Compress to JPEG
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+      callback(compressedDataUrl);
+    };
+  };
+}
+
+// 6. PROJECTS & CATEGORIES PANEL CONTROLLER
+function initProjectsPanel() {
+  const tabBtnList = document.getElementById("tab-btn-project-list");
+  const tabBtnCats = document.getElementById("tab-btn-project-categories");
+  const viewList = document.getElementById("project-tab-list-view");
+  const viewCats = document.getElementById("project-tab-categories-view");
+
+  let currentSubTab = "list"; // or "categories"
+
+  // Switch Sub-Tabs
+  if (tabBtnList && tabBtnCats) {
+    tabBtnList.addEventListener("click", () => {
+      if (currentSubTab === "list") return;
+      currentSubTab = "list";
+      tabBtnList.classList.add("active");
+      tabBtnCats.classList.remove("active");
+      viewList.style.display = "block";
+      viewCats.style.display = "none";
+      resetProjectForm();
+      renderProjectsList();
+    });
+
+    tabBtnCats.addEventListener("click", () => {
+      if (currentSubTab === "categories") return;
+      currentSubTab = "categories";
+      tabBtnCats.classList.add("active");
+      tabBtnList.classList.remove("active");
+      viewCats.style.display = "block";
+      viewList.style.display = "none";
+      resetCategoryForm();
+      renderCategoriesList();
+    });
+  }
+
+  // --- PROJECT THUMBNAIL UPLOADER ---
+  const fileInput = document.getElementById("project-thumb-file");
+  const chooseBtn = document.getElementById("btn-choose-project-thumb");
+  const deleteBtn = document.getElementById("btn-delete-project-thumb");
+  const hiddenInput = document.getElementById("project-thumbnail");
+
+  const updateProjectThumbPreview = (thumbUrl) => {
+    const previewBox = document.getElementById("project-thumb-preview");
+    if (!previewBox) return;
+
+    if (thumbUrl) {
+      previewBox.innerHTML = `<img src="${thumbUrl}" alt="Project Thumbnail Preview">`;
+      if (deleteBtn) deleteBtn.style.display = "inline-flex";
+    } else {
+      previewBox.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-light);"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+      `;
+      if (deleteBtn) deleteBtn.style.display = "none";
+    }
+  };
+
+  if (chooseBtn && fileInput) {
+    chooseBtn.addEventListener("click", () => fileInput.click());
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Compress thumbnail to keep localStorage usage small
+        compressImage(file, 800, 500, 0.7, (compressedBase64) => {
+          if (hiddenInput) hiddenInput.value = compressedBase64;
+          updateProjectThumbPreview(compressedBase64);
+        });
+      }
+    });
+  }
+
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", () => {
+      if (hiddenInput) hiddenInput.value = "";
+      if (fileInput) fileInput.value = "";
+      updateProjectThumbPreview("");
+    });
+  }
+
+  // --- PROJECT CRUD LOGIC ---
+  const projectForm = document.getElementById("form-project");
+  const projectFormTitle = document.getElementById("project-form-title");
+  const btnSaveProject = document.getElementById("btn-save-project");
+  const btnCancelProject = document.getElementById("btn-cancel-project");
+  const projectCategorySelect = document.getElementById("project-category-select");
+
+  const populateCategorySelect = () => {
+    if (!projectCategorySelect) return;
+    const data = AppState.getData();
+    const categories = data.projectCategories || ["Frontend", "Backend", "Fullstack"];
+    
+    projectCategorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+  };
+
+  const renderProjectsList = () => {
+    const data = AppState.getData();
+    const container = document.getElementById("projects-manager-target");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const projects = data.projects || [];
+    if (projects.length === 0) {
+      container.innerHTML = `<div class="project-manager-empty">Belum ada proyek. Tambahkan proyek pertama Anda!</div>`;
+      return;
+    }
+
+    projects.forEach(proj => {
+      const item = document.createElement("div");
+      item.className = "project-manager-item";
+
+      const thumbHTML = proj.thumbnail
+        ? `<img src="${proj.thumbnail}" alt="Thumbnail">`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
+
+      // Determine status chip colour class
+      const statusLower = (proj.status || "").toLowerCase();
+      let statusClass = "";
+      if (statusLower.includes("complete") || statusLower.includes("selesai")) {
+        statusClass = "meta-status-completed";
+      } else if (statusLower.includes("progress") || statusLower.includes("berlangsung")) {
+        statusClass = "meta-status-progress";
+      }
+
+      const featuredBadge = proj.featured
+        ? `<span class="project-manager-meta-item project-manager-meta-featured">⭐ Unggulan</span>`
+        : "";
+
+      item.innerHTML = `
+        <div class="project-manager-thumb">${thumbHTML}</div>
+        <div class="project-manager-info">
+          <span class="project-manager-title" title="${proj.title}">${proj.title}</span>
+          <div class="project-manager-meta">
+            <span class="project-manager-meta-item">${proj.category || "—"}</span>
+            <span class="project-manager-meta-item ${statusClass}">${proj.status || "—"}</span>
+            ${featuredBadge}
+          </div>
+        </div>
+        <div class="project-manager-actions">
+          <button class="btn btn-edit edit-project-btn" data-id="${proj.id}">Edit</button>
+          <button class="btn btn-danger delete-project-btn" data-id="${proj.id}">Hapus</button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+
+    container.querySelectorAll(".delete-project-btn").forEach(btn => {
+      btn.addEventListener("click", () => deleteProject(btn.dataset.id));
+    });
+    container.querySelectorAll(".edit-project-btn").forEach(btn => {
+      btn.addEventListener("click", () => editProject(btn.dataset.id));
+    });
+  };
+
+  const resetProjectForm = () => {
+    if (projectForm) projectForm.reset();
+    document.getElementById("project-id-hidden").value = "";
+    if (hiddenInput) hiddenInput.value = "";
+    if (fileInput) fileInput.value = "";
+    updateProjectThumbPreview("");
+    if (projectFormTitle) projectFormTitle.innerText = "Tambah Proyek Baru";
+    if (btnSaveProject) btnSaveProject.innerText = "Simpan Proyek";
+    if (btnCancelProject) btnCancelProject.style.display = "none";
+    populateCategorySelect();
+  };
+
+  if (btnCancelProject) {
+    btnCancelProject.addEventListener("click", resetProjectForm);
+  }
+
+  if (projectForm) {
+    projectForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = AppState.getData();
+      if (!data.projects) data.projects = [];
+
+      const id = document.getElementById("project-id-hidden").value;
+      const title = document.getElementById("project-title-input").value.trim();
+      const category = projectCategorySelect.value;
+      const status = document.getElementById("project-status-select").value;
+      const thumbnail = hiddenInput ? hiddenInput.value : "";
+      const description = document.getElementById("project-description-input").value.trim();
+      const techString = document.getElementById("project-technologies-input").value.trim();
+      const technologies = techString.split(",").map(t => t.trim()).filter(t => t.length > 0);
+      const demoUrl = document.getElementById("project-demo-url-input").value.trim() || "#";
+      const githubUrl = document.getElementById("project-github-url-input").value.trim() || "#";
+      const featured = document.getElementById("project-featured-input").checked;
+
+      if (id) {
+        // Edit existing project
+        const proj = data.projects.find(p => p.id === id);
+        if (proj) {
+          proj.title = title;
+          proj.category = category;
+          proj.status = status;
+          proj.thumbnail = thumbnail;
+          proj.description = description;
+          proj.technologies = technologies;
+          proj.demoUrl = demoUrl;
+          proj.githubUrl = githubUrl;
+          proj.featured = featured;
+          showToast(`Proyek "${title}" berhasil diperbarui!`);
+        }
+      } else {
+        // Create new project
+        const newProj = {
+          id: "proj_" + Date.now(),
+          title,
+          category,
+          status,
+          thumbnail,
+          description,
+          technologies,
+          demoUrl,
+          githubUrl,
+          featured
+        };
+        data.projects.push(newProj);
+        showToast(`Proyek "${title}" berhasil ditambahkan!`);
+      }
+
+      AppState.save();
+      renderProjectsList();
+      resetProjectForm();
+    });
+  }
+
+  const editProject = (projId) => {
+    const data = AppState.getData();
+    const proj = data.projects.find(p => p.id === projId);
+    if (!proj) return;
+
+    document.getElementById("project-id-hidden").value = proj.id;
+    document.getElementById("project-title-input").value = proj.title;
+    
+    // Ensure select dropdown has option, populate first
+    populateCategorySelect();
+    projectCategorySelect.value = proj.category;
+
+    document.getElementById("project-status-select").value = proj.status || "Completed";
+    if (hiddenInput) hiddenInput.value = proj.thumbnail || "";
+    updateProjectThumbPreview(proj.thumbnail || "");
+    document.getElementById("project-description-input").value = proj.description || "";
+    document.getElementById("project-technologies-input").value = (proj.technologies || []).join(", ");
+    document.getElementById("project-demo-url-input").value = proj.demoUrl === "#" ? "" : proj.demoUrl;
+    document.getElementById("project-github-url-input").value = proj.githubUrl === "#" ? "" : proj.githubUrl;
+    document.getElementById("project-featured-input").checked = !!proj.featured;
+
+    if (projectFormTitle) projectFormTitle.innerText = "Edit Proyek";
+    if (btnSaveProject) btnSaveProject.innerText = "Simpan Perubahan";
+    if (btnCancelProject) btnCancelProject.style.display = "inline-flex";
+
+    if (projectForm) {
+      projectForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  const deleteProject = (projId) => {
+    const data = AppState.getData();
+    const proj = data.projects.find(p => p.id === projId);
+    if (proj && confirm(`Apakah Anda yakin ingin menghapus proyek "${proj.title}"?`)) {
+      data.projects = data.projects.filter(p => p.id !== projId);
+      AppState.save();
+      renderProjectsList();
+      showToast(`Proyek "${proj.title}" berhasil dihapus.`);
+    }
+  };
+
+  // --- CATEGORY CRUD LOGIC ---
+  const categoryForm = document.getElementById("form-category");
+  const categoryFormTitle = document.getElementById("category-form-title");
+  const btnSaveCategory = document.getElementById("btn-save-category");
+  const btnCancelCategory = document.getElementById("btn-cancel-category");
+
+  const renderCategoriesList = () => {
+    const data = AppState.getData();
+    const container = document.getElementById("categories-manager-target");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const categories = data.projectCategories || ["Frontend", "Backend", "Fullstack"];
+
+    if (categories.length === 0) {
+      container.innerHTML = `<div class="project-manager-empty">Belum ada kategori. Tambahkan kategori pertama!</div>`;
+      return;
+    }
+
+    // Cycle through a palette of dot colours for visual variety
+    const dotColors = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#3b82f6", "#8b5cf6"];
+
+    categories.forEach((cat, idx) => {
+      const item = document.createElement("div");
+      item.className = "category-manager-item";
+      const dotColor = dotColors[idx % dotColors.length];
+
+      item.innerHTML = `
+        <div class="category-manager-name-wrap">
+          <span class="category-manager-dot" style="background-color: ${dotColor};"></span>
+          <span class="category-manager-name">${cat}</span>
+        </div>
+        <div class="category-manager-actions">
+          <button class="btn btn-edit edit-category-btn" data-index="${idx}">Edit</button>
+          <button class="btn btn-danger delete-category-btn" data-index="${idx}">Hapus</button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+
+    container.querySelectorAll(".delete-category-btn").forEach(btn => {
+      btn.addEventListener("click", () => deleteCategory(parseInt(btn.dataset.index)));
+    });
+    container.querySelectorAll(".edit-category-btn").forEach(btn => {
+      btn.addEventListener("click", () => editCategory(parseInt(btn.dataset.index)));
+    });
+  };
+
+  const resetCategoryForm = () => {
+    if (categoryForm) categoryForm.reset();
+    document.getElementById("category-index-hidden").value = "";
+    if (categoryFormTitle) categoryFormTitle.innerText = "Tambah Kategori Baru";
+    if (btnSaveCategory) btnSaveCategory.innerText = "Simpan Kategori";
+    if (btnCancelCategory) btnCancelCategory.style.display = "none";
+  };
+
+  if (btnCancelCategory) {
+    btnCancelCategory.addEventListener("click", resetCategoryForm);
+  }
+
+  if (categoryForm) {
+    categoryForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = AppState.getData();
+      if (!data.projectCategories) data.projectCategories = ["Frontend", "Backend", "Fullstack"];
+
+      const indexStr = document.getElementById("category-index-hidden").value;
+      const name = document.getElementById("category-name-input").value.trim();
+
+      if (indexStr !== "") {
+        // Edit existing
+        const idx = parseInt(indexStr);
+        const oldName = data.projectCategories[idx];
+        
+        // Prevent duplicate
+        const isDuplicate = data.projectCategories.some((cat, i) => cat.toLowerCase() === name.toLowerCase() && i !== idx);
+        if (isDuplicate) {
+          alert(`Kategori "${name}" sudah ada!`);
+          return;
+        }
+
+        data.projectCategories[idx] = name;
+
+        // Automatically update category string on all projects that use the old name
+        if (data.projects) {
+          data.projects.forEach(p => {
+            if (p.category === oldName) {
+              p.category = name;
+            }
+          });
+        }
+
+        showToast(`Kategori "${oldName}" diperbarui menjadi "${name}"!`);
+      } else {
+        // Add new
+        const isDuplicate = data.projectCategories.some(cat => cat.toLowerCase() === name.toLowerCase());
+        if (isDuplicate) {
+          alert(`Kategori "${name}" sudah ada!`);
+          return;
+        }
+
+        data.projectCategories.push(name);
+        showToast(`Kategori "${name}" berhasil ditambahkan!`);
+      }
+
+      AppState.save();
+      renderCategoriesList();
+      resetCategoryForm();
+      populateCategorySelect(); // Refresh project select
+    });
+  }
+
+  const editCategory = (idx) => {
+    const data = AppState.getData();
+    const cat = data.projectCategories[idx];
+    if (!cat) return;
+
+    document.getElementById("category-index-hidden").value = idx;
+    document.getElementById("category-name-input").value = cat;
+
+    if (categoryFormTitle) categoryFormTitle.innerText = "Edit Kategori";
+    if (btnSaveCategory) btnSaveCategory.innerText = "Simpan Perubahan";
+    if (btnCancelCategory) btnCancelCategory.style.display = "inline-flex";
+
+    if (categoryForm) {
+      categoryForm.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  const deleteCategory = (idx) => {
+    const data = AppState.getData();
+    const catName = data.projectCategories[idx];
+
+    if (catName && confirm(`Apakah Anda yakin ingin menghapus kategori "${catName}"?`)) {
+      data.projectCategories = data.projectCategories.filter((_, i) => i !== idx);
+
+      // Re-assign affected projects to another category or "Uncategorized"
+      const defaultCategory = data.projectCategories.length > 0 ? data.projectCategories[0] : "Uncategorized";
+      if (data.projects) {
+        data.projects.forEach(p => {
+          if (p.category === catName) {
+            p.category = defaultCategory;
+          }
+        });
+      }
+
+      AppState.save();
+      renderCategoriesList();
+      showToast(`Kategori "${catName}" berhasil dihapus.`);
+      populateCategorySelect(); // Refresh project select
+    }
+  };
+
+  // --- INITIALIZE VIEWS ---
+  populateCategorySelect();
+  renderProjectsList();
+  renderCategoriesList();
 }
