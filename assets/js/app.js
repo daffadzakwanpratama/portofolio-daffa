@@ -1110,9 +1110,11 @@ function setupInteractiveBackground() {
       if (mouse.x !== null && mouse.y !== null) {
         const dx = mouse.x - this.x;
         const dy = mouse.y - this.y;
-        const distance = Math.hypot(dx, dy);
+        const distSq = dx * dx + dy * dy;
+        const radiusSq = mouse.radius * mouse.radius;
 
-        if (distance < mouse.radius) {
+        if (distSq < radiusSq) {
+          const distance = Math.sqrt(distSq);
           // Push away from mouse
           const force = (mouse.radius - distance) / mouse.radius;
           const angle = Math.atan2(dy, dx);
@@ -1154,13 +1156,17 @@ function setupInteractiveBackground() {
 
   // Draw lines connecting close particles
   const drawLines = () => {
+    const limitSq = 110 * 110;
+    const mouseRadiusSq = mouse.radius * mouse.radius;
+
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
-        const distance = Math.hypot(dx, dy);
+        const distSq = dx * dx + dy * dy;
 
-        if (distance < 110) {
+        if (distSq < limitSq) {
+          const distance = Math.sqrt(distSq);
           // Draw line with opacity proportional to proximity
           const opacity = (110 - distance) / 110 * 0.18; // stronger lines
           ctx.beginPath();
@@ -1176,9 +1182,10 @@ function setupInteractiveBackground() {
       if (mouse.x !== null && mouse.y !== null) {
         const dx = particles[i].x - mouse.x;
         const dy = particles[i].y - mouse.y;
-        const distance = Math.hypot(dx, dy);
+        const distSq = dx * dx + dy * dy;
 
-        if (distance < mouse.radius) {
+        if (distSq < mouseRadiusSq) {
+          const distance = Math.sqrt(distSq);
           const opacity = (mouse.radius - distance) / mouse.radius * 0.32; // stronger attraction lines
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);

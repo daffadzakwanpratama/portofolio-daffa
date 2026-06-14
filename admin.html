@@ -2,6 +2,21 @@
 <html lang="id">
 
 <head>
+  <script>
+    // Proteksi Sesi Admin Client-Side
+    (function() {
+      try {
+        const sessionToken = sessionStorage.getItem("daffa_portfolio_session") || localStorage.getItem("daffa_portfolio_session");
+        // Hash SHA-256 dari password default 'daffa123'
+        const expectedToken = "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
+        if (sessionToken !== expectedToken) {
+          window.location.replace("login.html");
+        }
+      } catch (e) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daffa | Admin</title>
@@ -41,6 +56,10 @@
         <button class="menu-item" data-target="panel-timeline" id="btn-tab-timeline">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
           Kelola Riwayat
+        </button>
+        <button class="menu-item" id="btn-logout-admin" style="margin-top: auto; color: #ff3333;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Keluar (Logout)
         </button>
       </nav>
       

@@ -153,6 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initSkillsPanel();
   initTimelinePanel();
   initProjectsPanel();
+  
+  // Setup logout button
+  initLogoutButton();
 });
 
 // 1. HEADER PROFILE LOADER
@@ -192,6 +195,7 @@ function setupTabNavigation() {
   menuButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       const targetPanelId = btn.dataset.target;
+      if (!targetPanelId) return; // Abaikan tombol tanpa target panel (seperti Logout)
 
       menuButtons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
@@ -206,6 +210,24 @@ function setupTabNavigation() {
       titleText.innerText = titleMap[targetPanelId] || "Dashboard Admin";
     });
   });
+}
+
+// 2b. LOGOUT PANEL CONTROLLER
+function initLogoutButton() {
+  const logoutBtn = document.getElementById("btn-logout-admin");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      if (confirm("Apakah Anda yakin ingin keluar dari panel admin?")) {
+        try {
+          sessionStorage.removeItem("daffa_portfolio_session");
+          localStorage.removeItem("daffa_portfolio_session");
+        } catch (e) {
+          console.error("Gagal menghapus token sesi:", e);
+        }
+        window.location.replace("login.html");
+      }
+    });
+  }
 }
 
 // 3. PROFILE PANEL CONTROLLER
@@ -349,13 +371,22 @@ function initProfileForm() {
     cropState.startY = clientY - cropState.offsetY;
   };
 
+  let dragTick = false;
   const moveDrag = (clientX, clientY) => {
     if (!cropState.isDragging) return;
     cropState.offsetX = clientX - cropState.startX;
     cropState.offsetY = clientY - cropState.startY;
     
-    limitDragOffsets();
-    updateImageTransform();
+    if (!dragTick) {
+      window.requestAnimationFrame(() => {
+        if (cropState.isDragging) {
+          limitDragOffsets();
+          updateImageTransform();
+        }
+        dragTick = false;
+      });
+      dragTick = true;
+    }
   };
 
   const endDrag = () => {
