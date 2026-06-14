@@ -86,17 +86,33 @@ const AppState = {
 
 // --- CORE FRONTEND CONTROLLER ---
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize App State
-  AppState.init();
+  // Hubungkan ke database Cloud Firestore jika tersedia
+  if (window.firebaseDb) {
+    console.log("Menghubungkan ke Cloud Firestore...");
+    window.firebaseDb.collection("portfolio_data").doc("daffa")
+      .onSnapshot((doc) => {
+        if (doc.exists) {
+          console.log("Menerima pembaruan data dari Firestore.");
+          AppState.data = doc.data();
+        } else {
+          console.warn("Dokumen Firestore kosong. Menggunakan data cadangan lokal.");
+          AppState.init(); // Fallback ke localStorage/default data
+        }
+        // Render ulang seluruh section secara dinamis
+        renderAllSections();
+      }, (error) => {
+        console.error("Gagal mendengarkan database Firestore:", error);
+        AppState.init(); // Fallback
+        renderAllSections();
+      });
+  } else {
+    // Fallback ke penyimpanan lokal jika Firebase belum terhubung
+    console.log("Menggunakan data penyimpanan lokal.");
+    AppState.init();
+    renderAllSections();
+  }
 
-  // Render Sections
-  renderProfile();
-  renderSkills();
-  renderProjectFilters();
-  renderProjects("All");
-  renderTimeline();
-
-  // Setup Interactions
+  // Setup Interactions (Hanya dijalankan sekali saat DOM Load)
   setupHeaderScroll();
   setupMobileNav();
   setupScrollSpy();
@@ -113,6 +129,15 @@ document.addEventListener("DOMContentLoaded", () => {
   setupThemeToggle();
   setupLightbox();
 });
+
+// Fungsi pembantu untuk me-render seluruh section
+function renderAllSections() {
+  renderProfile();
+  renderSkills();
+  renderProjectFilters();
+  renderProjects("All");
+  renderTimeline();
+}
 
 // 1. RENDER PROFILE (Hero & About Me)
 function renderProfile() {

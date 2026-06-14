@@ -24,36 +24,7 @@ const AppState = {
   data: null,
 
   init() {
-    const localData = SafeStorage.getItem("daffa_portfolio_data");
-    if (localData) {
-      try {
-        this.data = JSON.parse(localData);
-        // Auto-merge new properties from default portfolio data (like web3formsKey and experienceYears)
-        if (this.data && this.data.profile && window.defaultPortfolioData && window.defaultPortfolioData.profile) {
-          let updated = false;
-          if (this.data.profile.web3formsKey === undefined) {
-            this.data.profile.web3formsKey = window.defaultPortfolioData.profile.web3formsKey;
-            updated = true;
-          }
-          if (this.data.profile.experienceYears === undefined) {
-            this.data.profile.experienceYears = window.defaultPortfolioData.profile.experienceYears;
-            updated = true;
-          }
-          if (this.data.projectCategories === undefined) {
-            this.data.projectCategories = window.defaultPortfolioData.projectCategories || ["Frontend", "Backend", "Fullstack"];
-            updated = true;
-          }
-          if (updated) {
-            this.save();
-          }
-        }
-      } catch (e) {
-        console.error("Error parsing portfolio data, resetting to default:", e);
-        this.resetToDefault();
-      }
-    } else {
-      this.resetToDefault();
-    }
+    // Diinisialisasi melalui Firebase Auth di event DOMContentLoaded
   },
 
   resetToDefault() {
@@ -66,7 +37,19 @@ const AppState = {
   },
 
   save() {
-    SafeStorage.setItem("daffa_portfolio_data", JSON.stringify(this.data));
+    if (window.firebaseDb) {
+      window.firebaseDb.collection("portfolio_data").doc("daffa").set(this.data)
+        .then(() => {
+          console.log("Data berhasil disimpan ke Firestore.");
+        })
+        .catch((error) => {
+          console.error("Gagal menyimpan ke Firestore:", error);
+          showToast("Error: Gagal menyimpan data ke cloud!");
+        });
+    } else {
+      // Fallback ke localStorage jika Firestore tidak tersedia
+      SafeStorage.setItem("daffa_portfolio_data", JSON.stringify(this.data));
+    }
   },
 
   getData() {
@@ -138,27 +121,78 @@ function initMobileSidebar() {
 
 // --- MAIN CONTROLLER ON DOM LOAD ---
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize state
-  AppState.init();
-
   // Setup mobile sidebar
   initMobileSidebar();
 
   // Setup tab switches
   setupTabNavigation();
 
-  // Load and pre-fill data
-  loadAdminProfileHeader();
-  initProfileForm();
-  initSkillsPanel();
-  initTimelinePanel();
-  initProjectsPanel();
-  
   // Setup logout button
   initLogoutButton();
-  
-  // Setup dynamic PIN changer form
-  initChangePinForm();
+
+  // Setup password changer form
+  initChangePasswordForm();
+
+  // Proteksi Sesi Admin & Fetch Firestore Data secara Real-Time
+  if (window.firebaseAuth && window.firebaseDb) {
+    window.firebaseAuth.onAuthStateChanged((user) => {
+      if (user) {
+        console.log("Admin terautentikasi:", user.email);
+        
+        // Fetch data sekali di awal, panel admin tidak perlu real-time listener dua arah (onSnapshot)
+        // agar menghindari overwrite cursor/focus ketika admin sedang mengetik.
+        window.firebaseDb.collection("portfolio_data").doc("daffa").get()
+          .then((doc) => {
+            if (doc.exists) {
+              console.log("Data ditemukan di Firestore.");
+              AppState.data = doc.data();
+              // Sinkronisasi data tambahan jika ada field baru di defaultPortfolioData
+              if (AppState.data && AppState.data.profile && window.defaultPortfolioData && window.defaultPortfolioData.profile) {
+                let updated = false;
+                if (AppState.data.profile.web3formsKey === undefined) {
+                  AppState.data.profile.web3formsKey = window.defaultPortfolioData.profile.web3formsKey;
+                  updated = true;
+                }
+                if (AppState.data.profile.experienceYears === undefined) {
+                  AppState.data.profile.experienceYears = window.defaultPortfolioData.profile.experienceYears;
+                  updated = true;
+                }
+                if (AppState.data.projectCategories === undefined) {
+                  AppState.data.projectCategories = window.defaultPortfolioData.projectCategories || ["Frontend", "Backend", "Fullstack"];
+                  updated = true;
+                }
+                if (updated) {
+                  AppState.save();
+                }
+              }
+            } else {
+              console.log("Firestore dokumen kosong. Menginisialisasi dengan data default...");
+              if (window.defaultPortfolioData) {
+                AppState.data = JSON.parse(JSON.stringify(window.defaultPortfolioData));
+                AppState.save(); // Ini akan menulis ke Firestore
+              } else {
+                console.error("defaultPortfolioData tidak tersedia!");
+              }
+            }
+
+            // Load and pre-fill data setelah data siap
+            loadAdminProfileHeader();
+            initProfileForm();
+            initSkillsPanel();
+            initTimelinePanel();
+            initProjectsPanel();
+          })
+          .catch((err) => {
+            console.error("Gagal memuat data dari Firestore:", err);
+            alert("Gagal terhubung ke database. Silakan muat ulang halaman.");
+          });
+      } else {
+        window.location.replace("login.html");
+      }
+    });
+  } else {
+    console.error("Firebase SDK tidak terdefinisi!");
+  }
 });
 
 // 1. HEADER PROFILE LOADER
@@ -221,86 +255,81 @@ function initLogoutButton() {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       if (confirm("Apakah Anda yakin ingin keluar dari panel admin?")) {
-        try {
-          sessionStorage.removeItem("daffa_portfolio_session");
-          localStorage.removeItem("daffa_portfolio_session");
-        } catch (e) {
-          console.error("Gagal menghapus token sesi:", e);
+        if (window.firebaseAuth) {
+          window.firebaseAuth.signOut()
+            .then(() => {
+              window.location.replace("login.html");
+            })
+            .catch((error) => {
+              console.error("Gagal melakukan sign out:", error);
+              alert("Gagal keluar dari sesi. Silakan coba lagi.");
+            });
+        } else {
+          window.location.replace("login.html");
         }
-        window.location.replace("login.html");
       }
     });
   }
 }
 
-// --- NATIVE SHA-256 HASHING ---
-async function getSHA256Hash(text) {
-  const msgBuffer = new TextEncoder().encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
-
-// 2c. DYNAMIC PIN CHANGER CONTROLLER
-function initChangePinForm() {
-  const form = document.getElementById("form-change-pin");
+// 2c. DYNAMIC PASSWORD CHANGER CONTROLLER
+function initChangePasswordForm() {
+  const form = document.getElementById("form-change-password");
   if (!form) return;
 
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    const oldPin = document.getElementById("pin-old").value;
-    const newPin = document.getElementById("pin-new").value;
-    const confirmPin = document.getElementById("pin-confirm").value;
+    const newPwd = document.getElementById("password-new").value;
+    const confirmPwd = document.getElementById("password-confirm").value;
+    const saveBtn = document.getElementById("btn-save-password");
 
-    // 1. Validasi konfirmasi PIN baru
-    if (newPin !== confirmPin) {
-      alert("Konfirmasi PIN baru tidak cocok! Silakan cek kembali.");
-      document.getElementById("pin-confirm").value = "";
-      document.getElementById("pin-confirm").focus();
+    if (newPwd !== confirmPwd) {
+      alert("Konfirmasi kata sandi baru tidak cocok! Silakan cek kembali.");
+      document.getElementById("password-confirm").value = "";
+      document.getElementById("password-confirm").focus();
       return;
     }
 
-    // 2. Cek apakah PIN baru minimal 4 karakter (opsional demi keamanan minimal)
-    if (newPin.length < 4) {
-      alert("PIN Baru minimal harus terdiri dari 4 karakter.");
-      document.getElementById("pin-new").focus();
+    if (newPwd.length < 6) {
+      alert("Kata sandi baru minimal harus terdiri dari 6 karakter.");
+      document.getElementById("password-new").focus();
       return;
     }
 
-    // 3. Ambil hash PIN aktif saat ini dari localStorage (dengan fallback default daffa123)
-    const activeHash = localStorage.getItem("daffa_portfolio_admin_hash") || "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
-    
-    // Hash input PIN lama dan verifikasi
-    const oldHash = await getSHA256Hash(oldPin);
-    if (oldHash !== activeHash) {
-      alert("PIN Aktif Saat Ini salah! Gagal memperbarui PIN.");
-      document.getElementById("pin-old").value = "";
-      document.getElementById("pin-old").focus();
-      return;
-    }
+    const originalBtnText = saveBtn.innerText;
+    saveBtn.disabled = true;
+    saveBtn.innerText = "Memproses...";
 
-    // 4. Update PIN: Hash PIN baru dan simpan di localStorage
-    const newHash = await getSHA256Hash(newPin);
-    try {
-      localStorage.setItem("daffa_portfolio_admin_hash", newHash);
-      
-      // Update sesi aktif agar pengguna tidak otomatis logout
-      const sessionToken = sessionStorage.getItem("daffa_portfolio_session") || localStorage.getItem("daffa_portfolio_session");
-      if (sessionToken) {
-        if (localStorage.getItem("daffa_portfolio_session")) {
-          localStorage.setItem("daffa_portfolio_session", newHash);
-        } else {
-          sessionStorage.setItem("daffa_portfolio_session", newHash);
-        }
+    if (window.firebaseAuth) {
+      const user = window.firebaseAuth.currentUser;
+      if (user) {
+        user.updatePassword(newPwd)
+          .then(() => {
+            showToast("Kata sandi admin berhasil diperbarui!");
+            form.reset();
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalBtnText;
+          })
+          .catch((error) => {
+            console.error("Gagal mengubah kata sandi:", error);
+            if (error.code === "auth/requires-recent-login") {
+              alert("Untuk keamanan, silakan keluar (logout) dan masuk kembali sebelum mengubah kata sandi.");
+            } else {
+              alert("Gagal memperbarui kata sandi: " + error.message);
+            }
+            saveBtn.disabled = false;
+            saveBtn.innerText = originalBtnText;
+          });
+      } else {
+        alert("Sesi pengguna tidak valid. Silakan muat ulang halaman.");
+        saveBtn.disabled = false;
+        saveBtn.innerText = originalBtnText;
       }
-
-      showToast("PIN Admin berhasil diperbarui!");
-      form.reset();
-    } catch (err) {
-      console.error("Gagal menyimpan PIN baru ke storage:", err);
-      alert("Terjadi kesalahan sistem saat menyimpan PIN baru.");
+    } else {
+      alert("Firebase Auth SDK belum siap.");
+      saveBtn.disabled = false;
+      saveBtn.innerText = originalBtnText;
     }
   });
 }
