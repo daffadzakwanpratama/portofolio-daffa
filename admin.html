@@ -7,8 +7,8 @@
     (function() {
       try {
         const sessionToken = sessionStorage.getItem("daffa_portfolio_session") || localStorage.getItem("daffa_portfolio_session");
-        // Hash SHA-256 dari password default 'daffa123'
-        const expectedToken = "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
+        // Membaca hash dinamis dari localStorage dengan fallback hash default 'daffa123'
+        const expectedToken = localStorage.getItem("daffa_portfolio_admin_hash") || "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
         if (sessionToken !== expectedToken) {
           window.location.replace("login.html");
         }
@@ -180,6 +180,32 @@
                   Simpan Perubahan
                 </button>
                 <button type="button" class="btn btn-secondary" id="btn-reset-profile">Reset ke Default</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Form Ubah PIN Dinamis -->
+          <div class="card" style="margin-top: 2.5rem;">
+            <h2 class="card-title">Keamanan & PIN Admin</h2>
+            <form id="form-change-pin">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="pin-old" class="form-label">PIN Aktif Saat Ini</label>
+                  <input type="password" id="pin-old" class="form-input" placeholder="Masukkan PIN aktif saat ini" required>
+                </div>
+                <div class="form-group">
+                  <label for="pin-new" class="form-label">PIN Baru</label>
+                  <input type="password" id="pin-new" class="form-input" placeholder="Masukkan PIN baru" required>
+                </div>
+                <div class="form-group">
+                  <label for="pin-confirm" class="form-label">Konfirmasi PIN Baru</label>
+                  <input type="password" id="pin-confirm" class="form-input" placeholder="Ketik ulang PIN baru" required>
+                </div>
+              </div>
+              <div class="form-actions" style="margin-top: 2.5rem;">
+                <button type="submit" class="btn btn-primary" id="btn-save-pin">
+                  Ubah PIN Admin
+                </button>
               </div>
             </form>
           </div>

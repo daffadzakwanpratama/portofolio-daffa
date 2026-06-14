@@ -266,7 +266,8 @@
       const checkCurrentSession = () => {
         try {
           const currentToken = sessionStorage.getItem("daffa_portfolio_session") || localStorage.getItem("daffa_portfolio_session");
-          const expectedToken = "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281"; // hash dari daffa123
+          // Membaca hash dinamis dari localStorage dengan fallback hash default 'daffa123'
+          const expectedToken = localStorage.getItem("daffa_portfolio_admin_hash") || "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
           if (currentToken === expectedToken) {
             window.location.replace("admin.html");
           }
@@ -306,8 +307,8 @@
         const password = passwordInput.value;
         const hash = await getSHA256Hash(password);
         
-        // Hash SHA-256 target untuk kata sandi "daffa123"
-        const expectedHash = "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
+        // Membaca hash dinamis dari localStorage dengan fallback hash default 'daffa123'
+        const expectedHash = localStorage.getItem("daffa_portfolio_admin_hash") || "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
 
         if (hash === expectedHash) {
           // Kata sandi benar: simpan sesi

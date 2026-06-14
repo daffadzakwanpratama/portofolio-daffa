@@ -156,6 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Setup logout button
   initLogoutButton();
+  
+  // Setup dynamic PIN changer form
+  initChangePinForm();
 });
 
 // 1. HEADER PROFILE LOADER
@@ -228,6 +231,78 @@ function initLogoutButton() {
       }
     });
   }
+}
+
+// --- NATIVE SHA-256 HASHING ---
+async function getSHA256Hash(text) {
+  const msgBuffer = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+// 2c. DYNAMIC PIN CHANGER CONTROLLER
+function initChangePinForm() {
+  const form = document.getElementById("form-change-pin");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const oldPin = document.getElementById("pin-old").value;
+    const newPin = document.getElementById("pin-new").value;
+    const confirmPin = document.getElementById("pin-confirm").value;
+
+    // 1. Validasi konfirmasi PIN baru
+    if (newPin !== confirmPin) {
+      alert("Konfirmasi PIN baru tidak cocok! Silakan cek kembali.");
+      document.getElementById("pin-confirm").value = "";
+      document.getElementById("pin-confirm").focus();
+      return;
+    }
+
+    // 2. Cek apakah PIN baru minimal 4 karakter (opsional demi keamanan minimal)
+    if (newPin.length < 4) {
+      alert("PIN Baru minimal harus terdiri dari 4 karakter.");
+      document.getElementById("pin-new").focus();
+      return;
+    }
+
+    // 3. Ambil hash PIN aktif saat ini dari localStorage (dengan fallback default daffa123)
+    const activeHash = localStorage.getItem("daffa_portfolio_admin_hash") || "34543d390913f892737fde76c849167bca82086e0a6b09b8ca63cb6dbe359281";
+    
+    // Hash input PIN lama dan verifikasi
+    const oldHash = await getSHA256Hash(oldPin);
+    if (oldHash !== activeHash) {
+      alert("PIN Aktif Saat Ini salah! Gagal memperbarui PIN.");
+      document.getElementById("pin-old").value = "";
+      document.getElementById("pin-old").focus();
+      return;
+    }
+
+    // 4. Update PIN: Hash PIN baru dan simpan di localStorage
+    const newHash = await getSHA256Hash(newPin);
+    try {
+      localStorage.setItem("daffa_portfolio_admin_hash", newHash);
+      
+      // Update sesi aktif agar pengguna tidak otomatis logout
+      const sessionToken = sessionStorage.getItem("daffa_portfolio_session") || localStorage.getItem("daffa_portfolio_session");
+      if (sessionToken) {
+        if (localStorage.getItem("daffa_portfolio_session")) {
+          localStorage.setItem("daffa_portfolio_session", newHash);
+        } else {
+          sessionStorage.setItem("daffa_portfolio_session", newHash);
+        }
+      }
+
+      showToast("PIN Admin berhasil diperbarui!");
+      form.reset();
+    } catch (err) {
+      console.error("Gagal menyimpan PIN baru ke storage:", err);
+      alert("Terjadi kesalahan sistem saat menyimpan PIN baru.");
+    }
+  });
 }
 
 // 3. PROFILE PANEL CONTROLLER
