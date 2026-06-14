@@ -242,7 +242,255 @@ function initProfileForm() {
     });
   }
 
-  // Handle file picker selection
+  // --- PROFILE AVATAR CROPPER SYSTEM ---
+  const cropModal = document.getElementById("crop-modal");
+  const cropModalClose = document.getElementById("crop-modal-close");
+  const btnCropCancel = document.getElementById("btn-crop-cancel");
+  const btnCropSave = document.getElementById("btn-crop-save");
+  
+  const cropViewport = document.getElementById("crop-viewport");
+  const cropImage = document.getElementById("crop-image");
+  const cropZoom = document.getElementById("crop-zoom");
+  
+  const btnZoomIn = document.getElementById("btn-zoom-in");
+  const btnZoomOut = document.getElementById("btn-zoom-out");
+  const btnCenterPhoto = document.getElementById("btn-center-photo");
+  const btnToggleGrid = document.getElementById("btn-toggle-grid");
+  const cropGridOverlay = document.getElementById("crop-grid-overlay");
+
+  let cropState = {
+    imgObj: null,
+    imgW: 0,
+    imgH: 0,
+    imgX: 0,
+    imgY: 0,
+    zoom: 1.0,
+    offsetX: 0,
+    offsetY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    gridOn: true
+  };
+
+  const openCropModal = (dataUrl) => {
+    cropState.imgObj = new Image();
+    cropState.imgObj.src = dataUrl;
+    cropState.imgObj.onload = () => {
+      cropImage.src = dataUrl;
+      
+      const W_i = cropState.imgObj.naturalWidth;
+      const H_i = cropState.imgObj.naturalHeight;
+      const V = 280;
+      
+      // Calculate initial dimensions to cover viewport
+      if (W_i > H_i) {
+        cropState.imgH = V;
+        cropState.imgW = V * (W_i / H_i);
+        cropState.imgX = (V - cropState.imgW) / 2;
+        cropState.imgY = 0;
+      } else {
+        cropState.imgW = V;
+        cropState.imgH = V * (H_i / W_i);
+        cropState.imgX = 0;
+        cropState.imgY = (V - cropState.imgH) / 2;
+      }
+      
+      // Reset coordinates and zoom
+      cropState.zoom = 1.0;
+      cropState.offsetX = 0;
+      cropState.offsetY = 0;
+      
+      // Update element layout sizes
+      cropImage.style.width = `${cropState.imgW}px`;
+      cropImage.style.height = `${cropState.imgH}px`;
+      cropImage.style.left = `${cropState.imgX}px`;
+      cropImage.style.top = `${cropState.imgY}px`;
+      
+      cropZoom.value = "1.0";
+      
+      updateImageTransform();
+      
+      // Show modal
+      cropModal.classList.add("active");
+      cropModal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    };
+  };
+
+  const updateImageTransform = () => {
+    cropImage.style.transform = `translate3d(${cropState.offsetX}px, ${cropState.offsetY}px, 0) scale(${cropState.zoom})`;
+  };
+
+  const limitDragOffsets = () => {
+    const zoom = cropState.zoom;
+    const imgW = cropState.imgW;
+    const imgH = cropState.imgH;
+    const imgX = cropState.imgX;
+    const imgY = cropState.imgY;
+    const V = 280;
+    
+    // Bounds boundaries math
+    const maxOffsetX = -imgX - (imgW / 2) * (1 - zoom);
+    const minOffsetX = V - imgX - (imgW / 2) * (1 - zoom) - imgW * zoom;
+    
+    const maxOffsetY = -imgY - (imgH / 2) * (1 - zoom);
+    const minOffsetY = V - imgY - (imgH / 2) * (1 - zoom) - imgH * zoom;
+    
+    if (cropState.offsetX > maxOffsetX) cropState.offsetX = maxOffsetX;
+    if (cropState.offsetX < minOffsetX) cropState.offsetX = minOffsetX;
+    if (cropState.offsetY > maxOffsetY) cropState.offsetY = maxOffsetY;
+    if (cropState.offsetY < minOffsetY) cropState.offsetY = minOffsetY;
+  };
+
+  const startDrag = (clientX, clientY) => {
+    cropState.isDragging = true;
+    cropState.startX = clientX - cropState.offsetX;
+    cropState.startY = clientY - cropState.offsetY;
+  };
+
+  const moveDrag = (clientX, clientY) => {
+    if (!cropState.isDragging) return;
+    cropState.offsetX = clientX - cropState.startX;
+    cropState.offsetY = clientY - cropState.startY;
+    
+    limitDragOffsets();
+    updateImageTransform();
+  };
+
+  const endDrag = () => {
+    cropState.isDragging = false;
+  };
+
+  // Viewport Dragging Mouse Listeners
+  cropViewport.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY);
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!cropState.isDragging) return;
+    moveDrag(e.clientX, e.clientY);
+  });
+
+  window.addEventListener("mouseup", endDrag);
+
+  // Viewport Dragging Touch Listeners
+  cropViewport.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      e.preventDefault();
+      startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!cropState.isDragging) return;
+    if (e.touches.length === 1) {
+      moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+
+  window.addEventListener("touchend", endDrag);
+
+  // Zoom Controls
+  cropZoom.addEventListener("input", (e) => {
+    cropState.zoom = parseFloat(e.target.value);
+    limitDragOffsets();
+    updateImageTransform();
+  });
+
+  btnZoomIn.addEventListener("click", () => {
+    let z = cropState.zoom + 0.1;
+    if (z > 4.0) z = 4.0;
+    cropState.zoom = z;
+    cropZoom.value = z.toString();
+    limitDragOffsets();
+    updateImageTransform();
+  });
+
+  btnZoomOut.addEventListener("click", () => {
+    let z = cropState.zoom - 0.1;
+    if (z < 1.0) z = 1.0;
+    cropState.zoom = z;
+    cropZoom.value = z.toString();
+    limitDragOffsets();
+    updateImageTransform();
+  });
+
+  // Center & Grid controls
+  btnCenterPhoto.addEventListener("click", () => {
+    cropState.offsetX = 0;
+    cropState.offsetY = 0;
+    cropState.zoom = 1.0;
+    cropZoom.value = "1.0";
+    updateImageTransform();
+  });
+
+  btnToggleGrid.addEventListener("click", () => {
+    cropState.gridOn = !cropState.gridOn;
+    if (cropState.gridOn) {
+      cropGridOverlay.classList.remove("hidden");
+      btnToggleGrid.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+        Grid: ON
+      `;
+    } else {
+      cropGridOverlay.classList.add("hidden");
+      btnToggleGrid.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+        Grid: OFF
+      `;
+    }
+  });
+
+  // Modal Cancel & Close
+  const closeCropModal = () => {
+    cropModal.classList.remove("active");
+    cropModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    fileInput.value = "";
+  };
+
+  cropModalClose.addEventListener("click", closeCropModal);
+  btnCropCancel.addEventListener("click", closeCropModal);
+
+  // Modal Save Changes (Render base64 avatar via Canvas)
+  btnCropSave.addEventListener("click", () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 500;
+    canvas.height = 500;
+    const ctx = canvas.getContext("2d");
+    
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    
+    const V = 280;
+    const C = 500;
+    const r = C / V;
+    
+    const zoom = cropState.zoom;
+    const leftScaled = cropState.imgX + (cropState.imgW / 2) * (1 - zoom) + cropState.offsetX;
+    const topScaled = cropState.imgY + (cropState.imgH / 2) * (1 - zoom) + cropState.offsetY;
+    const wScaled = cropState.imgW * zoom;
+    const hScaled = cropState.imgH * zoom;
+    
+    ctx.drawImage(
+      cropState.imgObj, 
+      leftScaled * r, 
+      topScaled * r, 
+      wScaled * r, 
+      hScaled * r
+    );
+    
+    const croppedBase64 = canvas.toDataURL("image/jpeg", 0.9);
+    
+    if (hiddenInput) hiddenInput.value = croppedBase64;
+    updateAvatarPreview(croppedBase64);
+    closeCropModal();
+    showToast("Foto profil telah disesuaikan!");
+  });
+
+  // Handle file picker selection and open cropper modal
   if (fileInput) {
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
@@ -255,9 +503,7 @@ function initProfileForm() {
 
         const reader = new FileReader();
         reader.onload = (event) => {
-          const base64String = event.target.result;
-          if (hiddenInput) hiddenInput.value = base64String;
-          updateAvatarPreview(base64String);
+          openCropModal(event.target.result);
         };
         reader.readAsDataURL(file);
       }
