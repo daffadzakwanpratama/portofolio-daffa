@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin | Kelola Portofolio Daffa</title>
+  <title>Daffa | Admin</title>
   <meta name="description" content="Panel kontrol admin premium untuk mengelola profil, keahlian, dan riwayat hidup portofolio.">
   
   <!-- CSS Stylesheets -->
@@ -319,6 +319,25 @@
                         <input type="file" id="project-thumb-file" accept="image/*" style="display: none;">
                         <input type="hidden" id="project-thumbnail" value="">
                         <small style="color: var(--text-muted); font-size: 0.75rem;">Mendukung berkas JPG, PNG, atau GIF (Maks. 2MB)</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-top: 1rem;">
+                    <label class="form-label">Galeri Foto Proyek (Opsional)</label>
+                    <div class="gallery-uploader-container" style="background-color: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 1.25rem;">
+                      <div class="gallery-upload-actions" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div>
+                          <button type="button" class="btn btn-secondary" id="btn-choose-project-gallery" style="padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border-radius: var(--radius-sm);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            Pilih Foto Galeri
+                          </button>
+                        </div>
+                        <input type="file" id="project-gallery-file" accept="image/*" multiple style="display: none;">
+                        <small style="color: var(--text-muted); font-size: 0.75rem;">Mendukung beberapa berkas JPG, PNG, atau GIF (Maks. 1.5MB per berkas)</small>
+                      </div>
+                      <div class="gallery-previews-container" id="project-gallery-previews">
+                        <!-- Diisi secara dinamis oleh JavaScript -->
                       </div>
                     </div>
                   </div>

@@ -40,6 +40,7 @@ const defaultPortfolioData = {
       category: "Fullstack",
       status: "Completed",
       thumbnail: "", // Digenerate otomatis dengan placeholder SVG/CSS gradient premium jika kosong
+      images: [],
       description: "Sistem pemesanan makanan berbasis QR Code untuk restoran. Memungkinkan pelanggan memindai kode QR meja, melihat menu, membuat pesanan secara langsung, dan melacak status pesanan secara real-time. Dilengkapi dashboard admin untuk mengelola menu, pesanan, dan laporan penjualan bulanan.",
       githubUrl: "https://github.com",
       demoUrl: "https://example.com",
@@ -52,6 +53,7 @@ const defaultPortfolioData = {
       category: "Frontend",
       status: "Completed",
       thumbnail: "",
+      images: [],
       description: "Aplikasi dashboard interaktif untuk melacak keuangan pribadi, pengeluaran bulanan, dan tabungan. Dilengkapi visualisasi grafik interaktif untuk analisis pengeluaran serta kalkulator target finansial jangka panjang.",
       githubUrl: "https://github.com",
       demoUrl: "https://example.com",
@@ -64,6 +66,7 @@ const defaultPortfolioData = {
       category: "Backend",
       status: "Completed",
       thumbnail: "",
+      images: [],
       description: "API tangguh untuk aplikasi manajemen tugas tim. Menyediakan fitur otentikasi JWT, enkripsi password bcrypt, pembuatan ruang kerja bersama, penugasan tugas ke anggota tim, dan pengiriman notifikasi status tugas.",
       githubUrl: "https://github.com",
       demoUrl: "https://example.com",

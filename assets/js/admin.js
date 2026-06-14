@@ -1196,11 +1196,73 @@ function initProjectsPanel() {
     });
   }
 
+  let projectGalleryImages = [];
+
   if (deleteBtn) {
     deleteBtn.addEventListener("click", () => {
       if (hiddenInput) hiddenInput.value = "";
       if (fileInput) fileInput.value = "";
       updateProjectThumbPreview("");
+    });
+  }
+
+  // --- PROJECT GALLERY UPLOADER ---
+  const galleryFileInput = document.getElementById("project-gallery-file");
+  const chooseGalleryBtn = document.getElementById("btn-choose-project-gallery");
+
+  const updateProjectGalleryPreviews = () => {
+    const previewsBox = document.getElementById("project-gallery-previews");
+    if (!previewsBox) return;
+
+    previewsBox.innerHTML = "";
+    if (projectGalleryImages.length === 0) {
+      previewsBox.style.display = "none";
+      return;
+    }
+
+    previewsBox.style.display = "flex";
+    projectGalleryImages.forEach((base64, index) => {
+      const previewItem = document.createElement("div");
+      previewItem.className = "gallery-preview-item";
+      previewItem.innerHTML = `
+        <img src="${base64}" alt="Gallery image preview ${index + 1}">
+        <button type="button" class="gallery-preview-delete" data-index="${index}" aria-label="Hapus Foto">&times;</button>
+      `;
+
+      previewItem.querySelector(".gallery-preview-delete").addEventListener("click", () => {
+        projectGalleryImages.splice(index, 1);
+        updateProjectGalleryPreviews();
+      });
+
+      previewsBox.appendChild(previewItem);
+    });
+  };
+
+  if (chooseGalleryBtn && galleryFileInput) {
+    chooseGalleryBtn.addEventListener("click", () => galleryFileInput.click());
+  }
+
+  if (galleryFileInput) {
+    galleryFileInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      let processed = 0;
+      files.forEach(file => {
+        if (file.size > 1.5 * 1024 * 1024) {
+          alert(`Berkas "${file.name}" terlalu besar! Maksimal ukuran adalah 1.5MB.`);
+          return;
+        }
+
+        compressImage(file, 800, 500, 0.7, (compressedBase64) => {
+          projectGalleryImages.push(compressedBase64);
+          processed++;
+          if (processed === files.length) {
+            updateProjectGalleryPreviews();
+            galleryFileInput.value = "";
+          }
+        });
+      });
     });
   }
 
@@ -1284,6 +1346,12 @@ function initProjectsPanel() {
     if (hiddenInput) hiddenInput.value = "";
     if (fileInput) fileInput.value = "";
     updateProjectThumbPreview("");
+
+    // Reset gallery uploader state
+    projectGalleryImages = [];
+    if (galleryFileInput) galleryFileInput.value = "";
+    updateProjectGalleryPreviews();
+
     if (projectFormTitle) projectFormTitle.innerText = "Tambah Proyek Baru";
     if (btnSaveProject) btnSaveProject.innerText = "Simpan Proyek";
     if (btnCancelProject) btnCancelProject.style.display = "none";
@@ -1320,6 +1388,7 @@ function initProjectsPanel() {
           proj.category = category;
           proj.status = status;
           proj.thumbnail = thumbnail;
+          proj.images = projectGalleryImages; // Save gallery images
           proj.description = description;
           proj.technologies = technologies;
           proj.demoUrl = demoUrl;
@@ -1335,6 +1404,7 @@ function initProjectsPanel() {
           category,
           status,
           thumbnail,
+          images: projectGalleryImages, // Save gallery images
           description,
           technologies,
           demoUrl,
@@ -1366,6 +1436,11 @@ function initProjectsPanel() {
     document.getElementById("project-status-select").value = proj.status || "Completed";
     if (hiddenInput) hiddenInput.value = proj.thumbnail || "";
     updateProjectThumbPreview(proj.thumbnail || "");
+
+    // Load gallery images
+    projectGalleryImages = proj.images || [];
+    updateProjectGalleryPreviews();
+
     document.getElementById("project-description-input").value = proj.description || "";
     document.getElementById("project-technologies-input").value = (proj.technologies || []).join(", ");
     document.getElementById("project-demo-url-input").value = proj.demoUrl === "#" ? "" : proj.demoUrl;

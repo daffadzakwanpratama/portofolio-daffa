@@ -111,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupProjectCard3DTilt();
   setupMagneticButtons();
   setupThemeToggle();
+  setupLightbox();
 });
 
 // 1. RENDER PROFILE (Hero & About Me)
@@ -606,10 +607,34 @@ function openProjectModal(projectId) {
   const modal = document.getElementById("project-modal");
   const modalBody = document.getElementById("modal-body-target");
 
-  // Custom thumbnail placeholder
-  let thumbnailHTML = "";
+  // --- CONSTRUCT GALLERY LIST ---
+  const galleryList = [];
+
+  // Helper function to return markup representing the item
+  function getGalleryItemHTML(item, isMain = false) {
+    if (item.type === 'image') {
+      const mainStyle = isMain ? 'width: 100%; height: 100%; object-fit: cover;' : '';
+      return `<img src="${item.src}" alt="${item.label || 'Project Image'}" style="${mainStyle}">`;
+    } else {
+      const mainStyle = isMain ? 'width: 100%; height: 100%;' : '';
+      const svgSize = isMain ? 60 : 20;
+      const labelSize = isMain ? 'font-size: 0.95rem;' : 'font-size: 0.55rem;';
+      return `
+        <div class="project-thumb-placeholder" style="background: ${item.bg}; ${mainStyle} display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.5rem; text-align: center; border-radius: var(--radius-sm);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: ${item.strokeColor}"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span style="${labelSize} font-weight: 700; color: ${item.strokeColor}; text-transform: uppercase; letter-spacing: 0.05em;">${item.label}</span>
+        </div>
+      `;
+    }
+  }
+
+  // 1. Add thumbnail as the primary image
   if (project.thumbnail) {
-    thumbnailHTML = `<img src="${project.thumbnail}" alt="${project.title}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius-sm)">`;
+    galleryList.push({
+      type: 'image',
+      src: project.thumbnail,
+      label: 'Main Screen'
+    });
   } else {
     const isDark = document.documentElement.classList.contains("dark-mode");
     const hue = project.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
@@ -618,11 +643,59 @@ function openProjectModal(projectId) {
       : `linear-gradient(135deg, hsl(${hue}, 70%, 94%) 0%, hsl(${(hue + 40) % 360}, 75%, 85%) 100%)`;
     const strokeColor = isDark ? `hsl(${hue}, 50%, 65%)` : `hsl(${hue}, 60%, 45%)`;
 
-    thumbnailHTML = `
-      <div class="project-thumb-placeholder" style="background: ${bg}; width:100%; height:100%; border-radius: var(--radius-sm)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: ${strokeColor}"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-      </div>
-    `;
+    galleryList.push({
+      type: 'placeholder',
+      bg: bg,
+      strokeColor: strokeColor,
+      label: 'Main Screen',
+      title: project.title,
+      category: project.category
+    });
+  }
+
+  // 2. Add custom gallery images if they exist, or mock screen fallbacks
+  if (project.images && project.images.length > 0) {
+    project.images.forEach((img, idx) => {
+      galleryList.push({
+        type: 'image',
+        src: img,
+        label: `Screen ${idx + 2}`
+      });
+    });
+  } else {
+    // Generate beautiful alternative mock gradient screens for interactive demo
+    const isDark = document.documentElement.classList.contains("dark-mode");
+    const hue = project.title.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+
+    const hue2 = (hue + 60) % 360;
+    const bg2 = isDark
+      ? `linear-gradient(135deg, hsl(${hue2}, 40%, 15%) 0%, hsl(${(hue2 + 40) % 360}, 45%, 10%) 100%)`
+      : `linear-gradient(135deg, hsl(${hue2}, 70%, 94%) 0%, hsl(${(hue2 + 40) % 360}, 75%, 85%) 100%)`;
+    const strokeColor2 = isDark ? `hsl(${hue2}, 50%, 65%)` : `hsl(${hue2}, 60%, 45%)`;
+
+    const hue3 = (hue + 120) % 360;
+    const bg3 = isDark
+      ? `linear-gradient(135deg, hsl(${hue3}, 40%, 15%) 0%, hsl(${(hue3 + 40) % 360}, 45%, 10%) 100%)`
+      : `linear-gradient(135deg, hsl(${hue3}, 70%, 94%) 0%, hsl(${(hue3 + 40) % 360}, 75%, 85%) 100%)`;
+    const strokeColor3 = isDark ? `hsl(${hue3}, 50%, 65%)` : `hsl(${hue3}, 60%, 45%)`;
+
+    galleryList.push({
+      type: 'placeholder',
+      bg: bg2,
+      strokeColor: strokeColor2,
+      label: 'Dashboard view',
+      title: project.title,
+      category: project.category
+    });
+
+    galleryList.push({
+      type: 'placeholder',
+      bg: bg3,
+      strokeColor: strokeColor3,
+      label: 'Analytics / Settings',
+      title: project.title,
+      category: project.category
+    });
   }
 
   // Tech list
@@ -641,9 +714,25 @@ function openProjectModal(projectId) {
     statusClass = "status-ongoing";
   }
 
+  // Generate thumbnail buttons HTML
+  let thumbsHTML = "";
+  galleryList.forEach((item, index) => {
+    const activeClass = index === 0 ? "active" : "";
+    thumbsHTML += `
+      <div class="modal-gallery-thumb-item ${activeClass}" data-index="${index}">
+        ${getGalleryItemHTML(item, false)}
+      </div>
+    `;
+  });
+
   modalBody.innerHTML = `
-    <div class="modal-thumb">
-      ${thumbnailHTML}
+    <div class="modal-gallery">
+      <div class="modal-gallery-main" id="modal-gallery-main-container">
+        ${getGalleryItemHTML(galleryList[0], true)}
+      </div>
+      <div class="modal-gallery-thumbs">
+        ${thumbsHTML}
+      </div>
     </div>
     <div class="modal-meta-top" style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; width: 100%;">
       <span class="project-category" style="font-size: 0.85rem; margin-bottom: 0;">${project.category}</span>
@@ -667,6 +756,28 @@ function openProjectModal(projectId) {
       </a>
     </div>
   `;
+
+  // Bind Switch Thumbnail Click Handlers
+  const thumbItems = modalBody.querySelectorAll(".modal-gallery-thumb-item");
+  const mainContainer = modalBody.querySelector("#modal-gallery-main-container");
+
+  thumbItems.forEach(thumb => {
+    thumb.addEventListener("click", () => {
+      thumbItems.forEach(t => t.classList.remove("active"));
+      thumb.classList.add("active");
+
+      const index = parseInt(thumb.dataset.index);
+      mainContainer.innerHTML = getGalleryItemHTML(galleryList[index], true);
+    });
+  });
+
+  // Bind Main Image click to Open Fullscreen Lightbox zoom
+  mainContainer.addEventListener("click", () => {
+    const activeThumb = modalBody.querySelector(".modal-gallery-thumb-item.active");
+    if (!activeThumb) return;
+    const index = parseInt(activeThumb.dataset.index);
+    openLightbox(galleryList[index]);
+  });
 
   // Trigger modal visibility
   modal.classList.add("active");
@@ -1315,5 +1426,54 @@ function setupThemeToggle() {
     switchTimer = window.setTimeout(() => {
       document.documentElement.classList.remove("theme-switching");
     }, 320);
+  });
+}
+
+// 16. FULLSCREEN IMAGE LIGHTBOX OVERLAY
+function openLightbox(item) {
+  const lightbox = document.getElementById("image-lightbox");
+  const lightboxImgContainer = lightbox.querySelector(".lightbox-content");
+
+  if (!lightbox || !lightboxImgContainer) return;
+
+  if (item.type === 'image') {
+    lightboxImgContainer.innerHTML = `<img id="lightbox-img" src="${item.src}" alt="Zoomed Image">`;
+  } else {
+    lightboxImgContainer.innerHTML = `
+      <div class="project-thumb-placeholder" style="background: ${item.bg}; width: 85vw; height: 70vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1.5rem; text-align: center; border-radius: var(--radius-md); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.08);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color: ${item.strokeColor}"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <span style="font-size: 1.5rem; font-weight: 700; color: ${item.strokeColor}; text-transform: uppercase; letter-spacing: 0.05em;">${item.label}</span>
+        <span style="font-size: 1rem; color: ${item.strokeColor}; opacity: 0.8; max-width: 80%;">${item.title}</span>
+      </div>
+    `;
+  }
+
+  lightbox.classList.add("active");
+  lightbox.setAttribute("aria-hidden", "false");
+}
+
+function setupLightbox() {
+  const lightbox = document.getElementById("image-lightbox");
+  const closeBtn = document.getElementById("lightbox-close");
+
+  if (!lightbox) return;
+
+  const closeLightbox = () => {
+    lightbox.classList.remove("active");
+    lightbox.setAttribute("aria-hidden", "true");
+  };
+
+  if (closeBtn) closeBtn.addEventListener("click", closeLightbox);
+
+  lightbox.addEventListener("click", (e) => {
+    if (e.target === lightbox || e.target.classList.contains("lightbox-content")) {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && lightbox.classList.contains("active")) {
+      closeLightbox();
+    }
   });
 }
